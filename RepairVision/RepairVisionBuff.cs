@@ -24,7 +24,7 @@ namespace RepairVision
                 Object.Destroy(_blockObject.GetComponent<BoxCollider>()); // Remove unneeded physics.
                 _blockObject.transform.localScale = Vector3.one * 1.03f;
 
-                var blockMaterial = new Material(Shader.Find("Particles/Standard Unlit"));
+                var blockMaterial = new Material(Shader.Find("Standard"));
                 blockMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
                 blockMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
                 blockMaterial.SetInt("_ZWrite", 0);
@@ -32,10 +32,12 @@ namespace RepairVision
                 blockMaterial.DisableKeyword("_ALPHABLEND_ON");
                 blockMaterial.EnableKeyword("_ALPHAPREMULTIPLY_ON");
                 blockMaterial.renderQueue = 3000;
-                // blockMaterial.EnableKeyword("_EMISSION");
-                // blockMaterial.SetColor("_Color", Color.black);
-                blockMaterial.SetFloat("_Mode", 2f);
-                blockMaterial.SetFloat("_ColorMode", 2f);
+                blockMaterial.SetFloat("_Mode", 3f);
+                blockMaterial.SetFloat("_Glossiness", 0f);
+                blockMaterial.SetFloat("_SpecularHighlights", 0f);
+                blockMaterial.DisableKeyword("_SPECULARHIGHLIGHTS_OFF");
+                blockMaterial.SetFloat("_GlossyReflections", 0f);
+                blockMaterial.DisableKeyword("_GLOSSYREFLECTIONS_OFF");
                 _blockObject.GetComponent<MeshRenderer>().material = blockMaterial;
             }
 
@@ -51,8 +53,8 @@ namespace RepairVision
     {
         private static Dictionary<Vector3i, GameObject> _blocks = new Dictionary<Vector3i, GameObject>();
         private static DateTime _nextUpdate = DateTime.Now.AddSeconds(2);
-        private static readonly Color _startColor = new Color(1f, 0.92156863f, 0.015686275f, 0.6f);
-        private static readonly Color _endColor = new Color(0.8f, 0f, 0f, 0.6f);
+        private static readonly Color _startColor = new Color(1f, 0.92156863f, 0.015686275f, 0.8f);
+        private static readonly Color _endColor = new Color(0.8f, 0f, 0f, 0.8f);
         
         public static void Postfix(EntityPlayerLocal __instance)
         {
@@ -94,7 +96,7 @@ namespace RepairVision
                         {
                             var position = new Vector3i(center.x + i, center.y + j, center.z + k);
                             TileEntity tileEntity = GameManager.Instance.World.GetTileEntity(position);
-                            if (tileEntity?.block == null || tileEntity.blockValue.isTerrain)
+                            if (tileEntity?.block == null || (tileEntity.blockValue.isTerrain && !tileEntity.block.GroupNames.Contains("Building")))
                             {
                                 continue;
                             }
@@ -141,11 +143,10 @@ namespace RepairVision
                             }
 
                             var distanceVec = Player.Entity.transform.position - damageBlock.transform.position;
-                            var distanceMod = Math.Max(0f, 1.0f - (distanceVec.magnitude / 30));
+                            var distanceMod = Math.Max(0f, 1.0f - (distanceVec.magnitude / 15));
                             var blockColor = Color.Lerp(_startColor, _endColor, (0.9f - hpPercent));
-                            var blockMaterial = damageBlock.GetComponent<MeshRenderer>().material;
                             blockColor.a *= distanceMod;
-                            blockMaterial.SetColor("_Color", blockColor);
+                            damageBlock.GetComponent<MeshRenderer>().material.SetColor("_Color", blockColor);
                         }
                     }
                 }
