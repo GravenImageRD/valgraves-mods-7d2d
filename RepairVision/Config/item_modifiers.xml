@@ -1,0 +1,20 @@
+<configs>
+    <append xpath="/item_modifiers">
+<!--        <item_modifier name="repairVisionMod" installable_tags="" modifier_tags="" blocked_tags="" type="attachment">-->
+<!--            <property name="Extends" value="modGeneralMaster" param1="CustomIcon"/>-->
+<!--            <property name="UnlockedBy" value=""/>-->
+<!--            <property name="TraderStageTemplate" value="modsTier4"/>-->
+<!--            <effect_group tiered="false" name="external attachment prefab (old way)">-->
+<!--                <requirement name="!HoldingItemHasTags" tags="attachmentsIncluded"/>-->
+<!--                <triggered_effect trigger="onSelfBuffStart" action="ModifyCVar" cvar=".enableRepairVision" operation="set" value="1">-->
+<!--                    <requirement name="HoldingItemHasTags" tags="repairTool"/>-->
+<!--                </triggered_effect>-->
+<!--                <triggered_effect trigger="onSelfHoldingItemCreated" action="AttachPrefabToHeldItem" prefab="@:Other/Items/Mods/Scopes/scope_8xPrefab.prefab" parent_transform="Attachments/Scope"/>-->
+<!--            </effect_group>-->
+<!--            <effect_group tiered="false" name="internal attachment prefab (A19)">-->
+<!--                <requirement name="HoldingItemHasTags" tags="attachmentsIncluded"/>-->
+<!--                <triggered_effect trigger="onSelfHoldingItemCreated" action="SetTransformActive" active="true" parent_transform="#HeldItemRoot" transform_path="scope"/>-->
+<!--            </effect_group>-->
+<!--        </item_modifier>-->
+    </append>
+</configs>
