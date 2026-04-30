@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xml>
+    <Name value="RepairVision"/>
+    <Author value="GravenImageRD"/>
+    <Description value="Allows you to see repairable blocks from a distance."/>
+    <DisplayName value="RepairVision"/>
+    <Website value=""/>
+    <Version value="1.0.0.0"/>
+</xml>

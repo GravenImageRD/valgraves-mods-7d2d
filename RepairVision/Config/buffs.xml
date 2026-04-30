@@ -1,0 +1,16 @@
+<configs>
+    <append xpath="/buffs">
+        <buff name="repairVision" name_key="repairVisionName" hidden="false" icon="ui_game_symbol_brokenbone" icon_color="200,20,20">
+            <stack_type value="ignore"/>
+            <duration value="1"/>
+            <effect_group>
+                <triggered_effect trigger="onSelfBuffStart" action="ModifyCVar" cvar=".enableRepairVision" operation="set" value="1">
+                    <requirement name="HoldingItemHasTags" tags="repairTool"/>
+                </triggered_effect>
+                <triggered_effect trigger="onSelfBuffStart" action="ModifyCVar" cvar=".enableRepairVision" operation="set" value="0">
+                    <requirement name="!HoldingItemHasTags" tags="repairTool"/>
+                </triggered_effect>
+            </effect_group>
+        </buff>
+    </append>
+</configs>
