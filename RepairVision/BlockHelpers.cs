@@ -5,7 +5,6 @@ using System.Text.RegularExpressions;
 using UniLinq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Valgraves.Common;
 
 namespace RepairVision
 {
@@ -54,11 +53,11 @@ namespace RepairVision
             var doorMesh = skinnedMeshRenderers.FirstOrDefault(x => x.name.ContainsCaseInsensitive("DMG0_LOD0"));
             if (doorMesh == null)
             {
-                Logging.Error($"Couldn't find doorMesh for tile {tileEntity.transform.name}");
+                //Logging.Error($"Couldn't find doorMesh for tile {tileEntity.transform.name}");
             }
             else
             {
-                Logging.Error($"Found doorMesh {doorMesh.name} for tile {tileEntity.transform.name}");
+                //Logging.Error($"Found doorMesh {doorMesh.name} for tile {tileEntity.transform.name}");
                 var doorObject = new GameObject();
                 doorObject.AddComponent<MeshFilter>().mesh = doorMesh.sharedMesh;
                 var doorRenderer = doorObject.AddComponent<MeshRenderer>();
@@ -129,7 +128,7 @@ namespace RepairVision
                 var filterName = Regex.Replace(mesh.name, "(_LOD\\d+)$", string.Empty);
                 if (processedMeshes.Contains(filterName))
                 {
-                    Logging.Warning($"Skipping mesh {mesh.name} because it is an extra LOD");
+                    //Logging.Warning($"Skipping mesh {mesh.name} because it is an extra LOD");
                     continue;
                 }
 
@@ -249,6 +248,21 @@ namespace RepairVision
             newBlock.SetActive(true);
             SceneManager.MoveGameObjectToScene(newBlock, SceneManager.GetActiveScene());
             return newBlock;
+        }
+
+        public static void CleanUp()
+        {
+            foreach (var entityObject in _entityObjects)
+            {
+                Object.Destroy(entityObject.Value);
+            }
+            _entityObjects.Clear();
+            
+            foreach (var shapeObject in _shapeObjects)
+            {
+                Object.Destroy(shapeObject.Value);
+            }
+            _shapeObjects.Clear();
         }
     }
 }

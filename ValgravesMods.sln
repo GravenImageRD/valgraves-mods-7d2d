@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeamColors", "TeamColors.csproj", "{84A6BF77-4633-4E60-986B-2585767498F0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeamColors", "TeamColors\TeamColors.csproj", "{84A6BF77-4633-4E60-986B-2585767498F0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RepairVision", "RepairVision\RepairVision.csproj", "{83B7C7CA-CC1C-4D59-A5EE-A44D5E7D1CFA}"
 EndProject
