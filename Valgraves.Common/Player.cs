@@ -11,12 +11,12 @@ namespace Valgraves.Common
                 _currentPlayer = GameManager.Instance.World?.GetPrimaryPlayer();
                 if (_currentPlayer == null)
                 {
-                    Log.Error("Could not find primary player!");
+                    //Log.Error("Could not find primary player!");
                 }
                 return _currentPlayer;
             }
         }
         
-        public static int EntityId => _currentPlayer.entityId;
+        public static int EntityId => _currentPlayer?.entityId ?? -1;
     }
 }
