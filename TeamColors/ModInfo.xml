@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xml>
+    <Name value="TeamColors"/>
+    <Author value="GravenImageRD"/>
+    <Description value="Enables player colors being applied to various things like quest markers and showing allies and vehicles more clearly."/>
+    <DisplayName value="TeamColors"/>
+    <Website value=""/>
+    <Version value="1.0.0.0"/>
+</xml>
