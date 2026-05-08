@@ -11,45 +11,18 @@ namespace RepairVision
     [HarmonyPatch(typeof(EntityPlayerLocal), nameof(EntityPlayerLocal.Update))]
     public class RepairVisionUpdate
     {
-        private static bool _initialized = false;
         private static bool _repairVisionEnabled = false;
-        
         private static Dictionary<Vector3i, GameObject> _blocks = new Dictionary<Vector3i, GameObject>();
-        private static Color _startColor = new Color(1f, 0.92156863f, 0.015686275f);
-        private static Color _endColor = new Color(0.8f, 0f, 0f);
-        private static float _damageThreshold = 0.9f;
-        private static int _scanRange = 25;
-
+        
         private static void CleanUpObjects()
         {
-            var oldBlocks = _blocks;
+            var oldBlocks = _blocks.Values.ToList();
             _blocks = new Dictionary<Vector3i, GameObject>();
-            var blockObjects = oldBlocks.Values.ToList();
-            foreach (var blockObject in blockObjects)
+            foreach (var blockObject in oldBlocks)
             {
                 Object.Destroy(blockObject);
             }
             BlockHelpers.CleanUp();
-        }
-
-        private static void Initialize()
-        {
-            _initialized = true;
-            _damageThreshold = RepairVision.Config.DamageThreshold;
-            _scanRange = RepairVision.Config.ScanRange;
-            if (!ColorUtility.TryParseHtmlString(RepairVision.Config.StartColor, out _startColor))
-            {
-                Logging.Warning($"Failed to convert StartColor {RepairVision.Config.StartColor} to Color, is it a valid HTML color code?");
-            }
-            if (!ColorUtility.TryParseHtmlString(RepairVision.Config.EndColor, out _endColor))
-            {
-                Logging.Warning($"Failed to convert EndColor {RepairVision.Config.EndColor} to Color, is it a valid HTML color code?");
-            }
-            Logging.Warning($"RepairVision Initialized:");
-            Logging.Warning($"  Damage Threshold: {_damageThreshold}");
-            Logging.Warning($"  Scan Range: {_scanRange}");
-            Logging.Warning($"  Start Color: {_startColor}");
-            Logging.Warning($"  End Color: {_endColor}");
         }
 
         private static bool SkipProcessing()
@@ -79,48 +52,20 @@ namespace RepairVision
         {
             try
             {
-                if (!_initialized)
-                {
-                    Initialize();
-                }
-                
-                if (RepairVision.RepairVisionActions.ToggleRepairVision.WasPressed)
-                {
-                    _repairVisionEnabled = !_repairVisionEnabled;
-                    if (!_repairVisionEnabled)
-                    {
-                        CleanUpObjects();
-                    }
-                    else
-                    {
-                        Player.Entity.Buffs.AddBuff("repairVision");
-                    }
-                }
-
-                if (!_repairVisionEnabled)
-                {
-                    if (Player.Entity.Buffs.HasBuff("repairVision"))
-                    {
-                        Player.Entity.Buffs.RemoveBuff("repairVision");
-                    }
-                    return;
-                }
-
                 if (SkipProcessing())
                 {
                     return;
                 }
 
+                var scanRange = RepairVision.Config.ScanRange;
+                var center = Player.Entity.position.FloorToInt();
+                var centerWorld = Player.Entity.transform.position.FloorToInt();
                 List<Vector3i> nearBlockPositions = new List<Vector3i>();
-                var center = new Vector3i();
-                center.FloorToInt(Player.Entity.position);
-                var centerWorld = new Vector3i();
-                centerWorld.FloorToInt(Player.Entity.transform.position);
-                for (int i = -_scanRange; i <= _scanRange; i++)
+                for (int i = -scanRange; i <= scanRange; i++)
                 {
-                    for (int j = -_scanRange; j <= _scanRange; j++)
+                    for (int j = -scanRange; j <= scanRange; j++)
                     {
-                        for (int k = -_scanRange; k <= _scanRange; k++)
+                        for (int k = -scanRange; k <= scanRange; k++)
                         {
                             var scanOffset = new Vector3i(i, j, k);
                             var position = center + scanOffset;
@@ -135,7 +80,7 @@ namespace RepairVision
                             nearBlockPositions.Add(position);
                             var hpPercent = (1.0f * (blockValue.Block.MaxDamage - blockValue.damage)) / blockValue.Block.MaxDamage;
                             // If the block isn't in bad shape, skip it and move on, removing tracked block if needed.
-                            if (hpPercent > _damageThreshold)
+                            if (hpPercent > RepairVision.Config.DamageThreshold)
                             {
                                 if (_blocks.TryGetValue(position, out GameObject existingBlock))
                                 {
@@ -188,7 +133,7 @@ namespace RepairVision
                             }
                             
                             // Delete old blocks if the block is now repaired enough.
-                            if (hpPercent > _damageThreshold)
+                            if (hpPercent > RepairVision.Config.DamageThreshold)
                             {
                                 Object.Destroy(_blocks[position]);
                                 _blocks.Remove(position);
@@ -202,8 +147,8 @@ namespace RepairVision
 
                             try
                             {
-                                var distanceMod = Math.Max(0f, 1.0f - (scanOffset.Magnitude() / (_scanRange * 0.6f)));
-                                var blockColor = Color.Lerp(_endColor, _startColor, hpPercent);
+                                var distanceMod = Math.Max(0f, 1.0f - (scanOffset.Magnitude() / (scanRange * 0.6f)));
+                                var blockColor = Color.Lerp(RepairVision.Config.GetEndColor(), RepairVision.Config.GetStartColor(), hpPercent);
                                 blockColor.a = 0.05f * (float)distanceMod;
                                 foreach (var renderer in damageBlock.GetComponentsInChildren<MeshRenderer>())
                                 {
