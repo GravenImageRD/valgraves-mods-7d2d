@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using UniLinq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Valgraves.Common;
 
 namespace RepairVision
 {
@@ -28,36 +29,34 @@ namespace RepairVision
         {
             GameObject entityObject = new GameObject();
             
-            // Add base, used for positioning and rotation.
-            var doorChild = tileEntity.transform.Find("Door");
-            var baseObject = new GameObject();
-            baseObject.transform.localScale = GetRelativeScale(tileEntity.transform.lossyScale, doorChild.lossyScale);
-            baseObject.transform.position = doorChild.transform.localPosition;
-            baseObject.transform.rotation = doorChild.transform.localRotation;
-            baseObject.transform.SetParent(entityObject.transform);
-            
-            var meshFilters = doorChild.GetComponentsInChildren<MeshFilter>();
-            var skinnedMeshRenderers = doorChild.GetComponentsInChildren<SkinnedMeshRenderer>();
+            var meshFilters = tileEntity.transform.GetComponentsInChildren<MeshFilter>(true);
+            var skinnedMeshRenderers = tileEntity.transform.GetComponentsInChildren<SkinnedMeshRenderer>(true);
             
             // Add frame.
             var frameObject = new GameObject();
-            var frameMesh = meshFilters.First(x => x.name.ContainsCaseInsensitive("Frame"));
-            frameObject.AddComponent<MeshFilter>().mesh = frameMesh.mesh;
-            frameObject.AddComponent<MeshRenderer>().material = GetBlockMaterial();
-            frameObject.transform.localScale = GetRelativeScale(tileEntity.transform.lossyScale, frameMesh.transform.lossyScale);
-            frameObject.transform.localPosition = tileEntity.transform.InverseTransformPoint(frameMesh.transform.position);
-            frameObject.transform.localRotation = Quaternion.Inverse(tileEntity.transform.rotation) * frameMesh.transform.rotation;
-            frameObject.transform.SetParent(baseObject.transform);
-            
+            var frameMesh = meshFilters.FirstOrDefault(x => x.name.ContainsCaseInsensitive("Frame"));
+            if (frameMesh == null)
+            {
+                Logging.Warning($"Couldn't find frameMesh for tile {tileEntity.transform.name}");
+            }
+            else
+            {
+                frameObject.AddComponent<MeshFilter>().mesh = frameMesh.mesh;
+                frameObject.AddComponent<MeshRenderer>().material = GetBlockMaterial();
+                frameObject.transform.localScale = GetRelativeScale(tileEntity.transform.lossyScale, frameMesh.transform.lossyScale);
+                frameObject.transform.localPosition = tileEntity.transform.InverseTransformPoint(frameMesh.transform.position);
+                frameObject.transform.localRotation = Quaternion.Inverse(tileEntity.transform.rotation) * frameMesh.transform.rotation;
+                frameObject.transform.SetParent(entityObject.transform);
+            }
+
             // Add main door if possible.
             var doorMesh = skinnedMeshRenderers.FirstOrDefault(x => x.name.ContainsCaseInsensitive("DMG0_LOD0"));
             if (doorMesh == null)
             {
-                //Logging.Error($"Couldn't find doorMesh for tile {tileEntity.transform.name}");
+                Logging.Warning($"Couldn't find doorMesh for tile {tileEntity.transform.name}");
             }
             else
             {
-                //Logging.Error($"Found doorMesh {doorMesh.name} for tile {tileEntity.transform.name}");
                 var doorObject = new GameObject();
                 doorObject.AddComponent<MeshFilter>().mesh = doorMesh.sharedMesh;
                 var doorRenderer = doorObject.AddComponent<MeshRenderer>();
@@ -72,7 +71,7 @@ namespace RepairVision
                 doorObject.transform.localScale = GetRelativeScale(tileEntity.transform.lossyScale, doorMesh.transform.lossyScale);
                 doorObject.transform.localPosition = tileEntity.transform.InverseTransformPoint(doorMesh.transform.position);
                 doorObject.transform.localRotation = Quaternion.Inverse(tileEntity.transform.rotation) * doorMesh.transform.rotation;
-                doorObject.transform.SetParent(baseObject.transform);
+                doorObject.transform.SetParent(entityObject.transform);
             }
 
             return entityObject;
@@ -81,38 +80,61 @@ namespace RepairVision
         private static GameObject GenerateTurretObject(ref BlockEntityData tileEntity)
         {
             GameObject entityObject = new GameObject();
-            var rotateChild = tileEntity.transform.Find("Rotate");
-            var pitchChild = tileEntity.transform.Find("Rotate").Find("Pitch");
+            
+            
             var meshes = tileEntity.transform.GetComponentsInChildren<MeshFilter>(true);
-            var baseMesh = meshes.First(x => x.name.Contains("Base_LOD0"));
-            var rotateMesh = meshes.First(x => x.name.Contains("Rotate_LOD0"));
-            var pitchMesh = meshes.First(x => x.name.Contains("Pitch_LOD0"));
+            var baseMesh = meshes.FirstOrDefault(x => x.name.Contains("Base_LOD0"));
+            var rotateMesh = meshes.FirstOrDefault(x => x.name.Contains("Rotate_LOD0"));
+            var pitchMesh = meshes.FirstOrDefault(x => x.name.Contains("Pitch_LOD0"));
             
             // Add base.
+            if (baseMesh == null)
+            {
+                Logging.Warning($"Couldn't find mesh for Base on turret entity {tileEntity.transform.name}, will use a cube instead");
+                Object.Destroy(entityObject);
+                return null;
+            }
+            
             var baseObject = new GameObject();
             baseObject.AddComponent<MeshFilter>().mesh = baseMesh.mesh;
             baseObject.AddComponent<MeshRenderer>().material = GetBlockMaterial();
             baseObject.transform.localScale = GetRelativeScale(tileEntity.transform.lossyScale, baseMesh.transform.lossyScale);
             baseObject.transform.SetParent(entityObject.transform);
             
-            // Add rotate.
-            var rotateObject = new GameObject();
-            rotateObject.AddComponent<MeshFilter>().mesh = rotateMesh.mesh;
-            rotateObject.AddComponent<MeshRenderer>().material = GetBlockMaterial();
-            rotateObject.transform.localScale = GetRelativeScale(tileEntity.transform.lossyScale, rotateMesh.transform.lossyScale);
-            rotateObject.transform.localPosition = tileEntity.transform.InverseTransformPoint(rotateChild.transform.position);
-            rotateObject.transform.localRotation = Quaternion.Inverse(tileEntity.transform.rotation) * rotateChild.transform.rotation;
-            rotateObject.transform.SetParent(baseObject.transform);
-            
-            // Add pitch.
-            var pitchObject = new GameObject();
-            pitchObject.AddComponent<MeshFilter>().mesh = pitchMesh.mesh;
-            var pitchRenderer = pitchObject.AddComponent<MeshRenderer>();
-            pitchRenderer.materials = new Material[] { GetBlockMaterial(), GetBlockMaterial() };
-            pitchObject.transform.localScale = GetRelativeScale(tileEntity.transform.lossyScale, pitchMesh.transform.lossyScale);
-            pitchObject.transform.localPosition = tileEntity.transform.InverseTransformPoint(pitchChild.transform.position);
-            pitchObject.transform.localRotation = Quaternion.Inverse(tileEntity.transform.rotation) * pitchChild.transform.rotation;
-            pitchObject.transform.SetParent(rotateObject.transform);
+            // Add rotate object.
+            var rotateChild = tileEntity.transform.Find("Rotate");
+            if (rotateChild == null)
+            {
+                Logging.Warning($"Couldn't find Rotate child on turret entity {tileEntity.transform.name}");
+            }
+            else
+            {
+                var rotateObject = new GameObject();
+                rotateObject.AddComponent<MeshFilter>().mesh = rotateMesh.mesh;
+                rotateObject.AddComponent<MeshRenderer>().material = GetBlockMaterial();
+                rotateObject.transform.localScale = GetRelativeScale(tileEntity.transform.lossyScale, rotateMesh.transform.lossyScale);
+                rotateObject.transform.localPosition = tileEntity.transform.InverseTransformPoint(rotateChild.transform.position);
+                rotateObject.transform.localRotation = Quaternion.Inverse(tileEntity.transform.rotation) * rotateChild.transform.rotation;
+                rotateObject.transform.SetParent(baseObject.transform);
+                
+                // Add pitch object.
+                var pitchChild = rotateChild.Find("Pitch");
+                if (pitchChild == null)
+                {
+                    Logging.Warning($"Couldn't find Pitch child on turret entity {tileEntity.transform.name}");
+                }
+                else
+                {
+                    var pitchObject = new GameObject();
+                    pitchObject.AddComponent<MeshFilter>().mesh = pitchMesh.mesh;
+                    var pitchRenderer = pitchObject.AddComponent<MeshRenderer>();
+                    pitchRenderer.materials = new Material[] { GetBlockMaterial(), GetBlockMaterial() };
+                    pitchObject.transform.localScale = GetRelativeScale(tileEntity.transform.lossyScale, pitchMesh.transform.lossyScale);
+                    pitchObject.transform.localPosition = tileEntity.transform.InverseTransformPoint(pitchChild.transform.position);
+                    pitchObject.transform.localRotation = Quaternion.Inverse(tileEntity.transform.rotation) * pitchChild.transform.rotation;
+                    pitchObject.transform.SetParent(rotateObject.transform);
+                }
+            }
 
             return entityObject;
         }
@@ -128,7 +150,7 @@ namespace RepairVision
                 var filterName = Regex.Replace(mesh.name, "(_LOD\\d+)$", string.Empty);
                 if (processedMeshes.Contains(filterName))
                 {
-                    //Logging.Warning($"Skipping mesh {mesh.name} because it is an extra LOD");
+                    Logging.Warning($"Skipping mesh {mesh.name} because it is an extra LOD");
                     continue;
                 }
 
@@ -159,7 +181,7 @@ namespace RepairVision
                         entityObject = GenerateDoorObject(ref tileEntity);
                         break;
                     }
-                    
+
                     default:
                     {
                         if (tileEntity.transform.GetComponentInChildren<AutoTurretController>() != null)
@@ -174,6 +196,12 @@ namespace RepairVision
                         break;
                     }
                 }
+
+                if (entityObject == null)
+                {
+                    return null;
+                }
+
                 entityObject.SetActive(false);
                 _entityObjects.Add(tileEntity.blockValue.Block.GetBlockName(), entityObject);
             }
@@ -191,7 +219,7 @@ namespace RepairVision
                 _shapeObjects.Add(blockShape.ShapeName, shapeObject);
                 var pivotObject = new GameObject("pivot");
                 pivotObject.transform.position += new Vector3(0.5f, 0.5f, 0.5f);
-                foreach (var mesh in blockShape.colliderMeshes)
+                foreach (var mesh in blockShape.visualMeshes)
                 {
                     if (mesh?.Vertices == null || !mesh.Vertices.Any() || mesh.Indices == null || !mesh.Indices.Any())
                     {
@@ -209,7 +237,6 @@ namespace RepairVision
                     meshObject.AddComponent<MeshFilter>().mesh = newMesh;
                     meshObject.AddComponent<MeshRenderer>().material = GetBlockMaterial();
                     meshObject.transform.SetParent(pivotObject.transform);
-                    meshObject.SetActive(true);
                 }
                 pivotObject.transform.SetParent(shapeObject.transform);
             }
@@ -238,8 +265,7 @@ namespace RepairVision
             if (_blockObject == null)
             {
                 _blockObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                //_blockObject.transform.position += new Vector3(0.5f, 0.5f, 0.5f);
-                Object.Destroy(_blockObject.GetComponent<BoxCollider>()); // Remove unneeded physics.
+                Object.Destroy(_blockObject.GetComponent<BoxCollider>());
                 _blockObject.GetComponent<MeshRenderer>().material = GetBlockMaterial();
                 _blockObject.SetActive(false);
             }
@@ -252,17 +278,19 @@ namespace RepairVision
 
         public static void CleanUp()
         {
-            foreach (var entityObject in _entityObjects)
+            var oldEntityObjects = _entityObjects;
+            var oldShapeObjects = _shapeObjects;
+            _entityObjects =  new Dictionary<string, GameObject>();
+            _shapeObjects =  new Dictionary<string, GameObject>();
+            foreach (var entityObject in oldEntityObjects)
             {
                 Object.Destroy(entityObject.Value);
             }
-            _entityObjects.Clear();
             
-            foreach (var shapeObject in _shapeObjects)
+            foreach (var shapeObject in oldShapeObjects)
             {
                 Object.Destroy(shapeObject.Value);
             }
-            _shapeObjects.Clear();
         }
     }
 }

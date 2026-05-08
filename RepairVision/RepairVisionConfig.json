@@ -1,3 +1,43 @@
+// Valid Values for Key Binds:
+//   Shift, Alt, Command, Control, LeftShift, LeftAlt, LeftCommand, LeftControl, RightShift, RightAlt,
+//   RightCommand, RightControl, Escape, F1 through F15, Key0 through Key9, A through Z, Backquote,
+//   Minus, Equals, Backspace, Tab, LeftBracket, RightBracket, Backslash,  Semicolon,  Quote,  Return,
+//   Comma,  Period,  Slash,  Space,  Insert,  Delete,  Home,  End,  PageUp,  PageDown,  LeftArrow,
+//   RightArrow,  UpArrow,  DownArrow,  Pad0,  Pad1,  Pad2,  Pad3,  Pad4,  Pad5,  Pad6,  Pad7,  Pad8,
+//   Pad9,  Numlock,  PadDivide,  PadMultiply,  PadMinus,  PadPlus,  PadEnter,  PadPeriod,  Clear,
+//   PadEquals, AltGr,  CapsLock,  ExclamationMark,  Tilde,  At,  Hash,  Dollar,  Percent,  Caret,
+//   Ampersand,  Asterisk,  LeftParen,  RightParen,  Underscore,  Plus,  LeftBrace,  RightBrace,  Pipe,
+//   Colon,  DoubleQuote,  LessThan,  GreaterThan,  QuestionMark
 {
-  "ToggleRepairVisionKeyBind": [ "Alt", "V" ]
+  // Turns on more verbose logging for debugging.
+  "DebugLogging": true,
+  
+  "ToggleRepairVisionKeyBind": [ "Alt", "V" ],
+  
+  // When showing RepairVision blocks, the color is determined by interpolating between a starting color
+  // that is used when the block hits the damage threshold and an end color for when the object hits 0 HP
+  // Color values are set using hex codes. Note that due to how color interpolation works some color pairs
+  // may have a mid-range that is basically invisible which is likely to be problematic.
+  "StartColor": "#FFEB04",
+  "EndColor": "#CC0000",
+
+  // !!!!!! WARNING !!!!!!!!!!!
+  // Increasing the following values may have noticeable impact on performance due to needing to process more
+  // blocks every frame. Lowering them will improve performance though, so if you are seeing a FPS impact from
+  // having RepairVision enabled, you might be able to reduce these to be able to still get some benefit from
+  // the mod.
+  // !!!!!! WARNING !!!!!!!!!!!
+
+  // A value form 0 to 1 setting the percentage at which RepairVision will highlight objects
+  // Ex: 0.67 == 67%, 0.1 == 10%, 1 == 100%
+  // NOTE: Using a damage threshold over 90% is not recommended, and 100% should not be used as it will almost
+  // certainly impact FPS.
+  "DamageThreshold": 0.9,
+
+
+  // The number of blocks in all directions to scan for repairable blocks under the damage threshold
+  // Note that larger values will put a heavier strain on processing when RepairVision is turned on and
+  // increase memory usage. If you increase this number it is strongly recommended that you reduce DamageThreshold.
+  // Ex: 25 scans a 50 block cube with the player at the center
+  "ScanRange": 25
 }
