@@ -1,0 +1,7 @@
+* VFX: Choose to use threshold colors (eg. yellow at 90%, orange at 50%, red at 30%) instead of interpolation
+* VFX: Visual effect when toggling on (ripple out) and off (fade out)
+* VFX: Update vision based on mesh state (open doors, spinning traps, etc.)
+* Gameplay: Enable only with mod on held repair tool, toggled with F like a light source
+* Gameplay: Visible mod on repair tools
+* Bugs: Some meshes, like single vault door, flicker erratically
+* Bugs: Multiblock objects that are not TileEntity objects only show one block instead of all blocks

@@ -9,6 +9,11 @@ namespace Valgraves.Common
 {
     public static class Extensions
     {
+        public static double Magnitude(this Vector3i vector)
+        {
+            return Math.Sqrt((vector.x * vector.x) + (vector.y * vector.y) + (vector.z * vector.z));
+        }
+        
         public static void AddBindingConflictWithActionSet(this PlayerActionsBase self, PlayerActionsBase other)
         {
             PlayerActionData.ActionSetUserData data = self.UserData as PlayerActionData.ActionSetUserData;

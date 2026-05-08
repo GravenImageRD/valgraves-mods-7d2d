@@ -1,5 +1,6 @@
 using System.Reflection;
 using HarmonyLib;
+using Valgraves.Common;
 
 namespace RepairVision
 {
@@ -14,6 +15,10 @@ namespace RepairVision
             var harmony = new Harmony(_modInstance.Name);
             harmony.PatchAll(Assembly.GetExecutingAssembly());   
             Config = RepairVisionConfig.LoadFromJson();
+            if (Config.DebugLogging)
+            {
+                Logging.EnableDebugLogging();
+            }
             RepairVisionActions = new RepairVisionActions();
         }
     }

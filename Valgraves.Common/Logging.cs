@@ -9,6 +9,13 @@ namespace Valgraves.Common
     {
         public static bool SendToChat = false;
         
+        private static bool _debugLogging = false;
+
+        public static void EnableDebugLogging()
+        {
+            _debugLogging = true;
+        }
+        
         private static void LogInternal(Action<string> logAction, string file, int line, string message)
         {
             string fileName = Path.GetFileNameWithoutExtension(file); 
@@ -24,12 +31,18 @@ namespace Valgraves.Common
         
         public static void WriteLine(string message, [CallerFilePath] string file = "", [CallerLineNumber] int line = 0)
         {
-            LogInternal(Log.WriteLine, file, line, message);
+            if (_debugLogging)
+            {
+                LogInternal(Log.WriteLine, file, line, message);
+            }
         }
         
         public static void Warning(string message, [CallerFilePath] string file = "", [CallerLineNumber] int line = 0)
         {
-            LogInternal(Log.Warning, file, line, message);
+            if (_debugLogging)
+            {
+                LogInternal(Log.Warning, file, line, message);
+            }
         }
         
         public static void Error(string message, [CallerFilePath] string file = "", [CallerLineNumber] int line = 0)

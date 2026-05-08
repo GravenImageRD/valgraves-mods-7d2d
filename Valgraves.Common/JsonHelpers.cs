@@ -6,13 +6,15 @@ namespace Valgraves.Common
 {
     public class ValgravesConfig<TConfigType> where TConfigType : new()
     {
+        public bool DebugLogging { get; set; } = false;
+        
         public static TConfigType LoadFromJson() 
         {
             var exePath = Path.GetDirectoryName(typeof(TConfigType).Assembly.Location) ?? string.Empty;
             var configPath = Path.Combine(exePath, $"{typeof(TConfigType).Name}.json");
             if (File.Exists(configPath))
             {
-                Logging.Warning($"Loading config file '{configPath}'");
+                //Logging.Warning($"Loading config file '{configPath}'");
                 return JsonConvert.DeserializeObject<TConfigType>(File.ReadAllText(configPath));
             }
             
