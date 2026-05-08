@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 using Valgraves.Common;
 
 namespace RepairVision
@@ -10,5 +11,26 @@ namespace RepairVision
         public string StartColor { get; set; } = "FFEB04";
         public string EndColor { get; set; } = "CC0000";
         public int ScanRange { get; set; } = 25;
+
+        private Color _startColor = new Color(1f, 0.92156863f, 0.015686275f);
+        private Color _endColor = new Color(0.8f, 0f, 0f);
+        
+        public Color GetStartColor()
+        {
+            if (!ColorUtility.TryParseHtmlString(RepairVision.Config.StartColor, out _startColor))
+            {
+                Logging.Warning($"Failed to convert StartColor {RepairVision.Config.StartColor} to Color, is it a valid HTML color code?");
+            }
+            return _startColor;
+        }
+        
+        public Color GetEndColor()
+        {
+            if (!ColorUtility.TryParseHtmlString(RepairVision.Config.EndColor, out _endColor))
+            {
+                Logging.Warning($"Failed to convert EndColor {RepairVision.Config.EndColor} to Color, is it a valid HTML color code?"); 
+            }
+            return _endColor;
+        }
     }
 }
