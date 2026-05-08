@@ -34,11 +34,12 @@
         <DebugSymbols>true</DebugSymbols>
     </PropertyGroup>
     <ItemGroup>
-        <Compile Include="Extensions.cs" />
+        <Compile Include="Extensions\InControl.cs" />
+        <Compile Include="Extensions\Vectors.cs" />
         <Compile Include="Logging.cs" />
         <Compile Include="Player.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
-        <Compile Include="JsonHelpers.cs" />
+        <Compile Include="ValgravesConfig.cs" />
     </ItemGroup>
     <ItemGroup>
       <Reference Include="Assembly-CSharp">

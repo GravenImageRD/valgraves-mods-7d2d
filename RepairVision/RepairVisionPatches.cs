@@ -4,6 +4,7 @@ using HarmonyLib;
 using UniLinq;
 using UnityEngine;
 using Valgraves.Common;
+using Valgraves.Common.Extensions;
 using Object = UnityEngine.Object;
 
 namespace RepairVision

@@ -1,29 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
 using InControl;
 using UniLinq;
-using UnityEngine;
 
-namespace Valgraves.Common
+namespace Valgraves.Common.Extensions
 {
-    public static class Extensions
+    /// <summary>
+    /// Extensions for various InControl features.
+    /// </summary>
+    public static class KeyBindingExtensions
     {
-        public static Vector3i FloorToInt(this Vector3 self)
-        {
-            return new Vector3i(
-                Utils.Fastfloor(self.x),
-                Utils.Fastfloor(self.y),
-                Utils.Fastfloor(self.z)
-            );
-        }
-        
-        public static double Magnitude(this Vector3i vector)
-        {
-            return Math.Sqrt((vector.x * vector.x) + (vector.y * vector.y) + (vector.z * vector.z));
-        }
-        
         public static void AddBindingConflictWithActionSet(this PlayerActionsBase self, PlayerActionsBase other)
         {
             PlayerActionData.ActionSetUserData data = self.UserData as PlayerActionData.ActionSetUserData;
@@ -45,6 +31,10 @@ namespace Valgraves.Common
             }
         }
 
+        /// <summary>
+        /// Attempts to convert a list of string values into a <see cref="KeyCombo"/> binding. If that
+        /// fails it will use the passed in default binding instead.
+        /// </summary>
         public static void LoadKeyBinding(this PlayerAction self, List<string> keyStrings, KeyCombo defaultBinding)
         {
             var keyBind = defaultBinding;
@@ -67,11 +57,6 @@ namespace Valgraves.Common
 
             self.ClearBindings();
             self.AddBinding(new KeyBindingSource(keyBind));
-        }
-
-        public static string GetAssemblyFolder(this Type caller)
-        {
-            return Path.GetDirectoryName(caller.Assembly.Location);
         }
     }
 }
