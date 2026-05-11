@@ -80,6 +80,7 @@ namespace RepairVision
                             
                             nearBlockPositions.Add(position);
                             var hpPercent = (1.0f * (blockValue.Block.MaxDamage - blockValue.damage)) / blockValue.Block.MaxDamage;
+                            
                             // If the block isn't in bad shape, skip it and move on, removing tracked block if needed.
                             if (hpPercent > RepairVision.Config.DamageThreshold)
                             {
@@ -91,16 +92,20 @@ namespace RepairVision
                                 continue;
                             }
                             
+                            // If we don't already have this block generated, generate it now.
                             if (!_blocks.TryGetValue(position, out GameObject damageBlock))
                             {
                                 var blockPosition = (centerWorld + scanOffset).ToVector3();
                                 var blockRotation = blockValue.Block.shape.GetRotation(blockValue);
+                                
+                                // Handle BlockShapes.
                                 if (blockValue.Block.shape is BlockShapeNew blockShape)
                                 {
                                     damageBlock = BlockHelpers.GenerateShapeObject(ref blockValue, ref blockShape);
                                     var pivot = damageBlock.GetComponentsInChildren<Transform>().First(x => x.name == "pivot");
                                     pivot.transform.rotation = blockRotation;
                                 }
+                                // Handle block entities.
                                 else if (blockValue.Block.HasTileEntity)
                                 {
                                     var chunk = GameManager.Instance.World.GetChunkFromWorldPos(position);
@@ -116,6 +121,7 @@ namespace RepairVision
                                     }                                    
                                 }
 
+                                // If we don't have a generated block at this point, fall back to a basic cube.
                                 if (damageBlock == null)
                                 {
                                     damageBlock = BlockHelpers.GenerateBlockObject();
@@ -127,6 +133,8 @@ namespace RepairVision
                                 _blocks.Add(position, damageBlock);
                             }
 
+                            // If we got here and have a null block, that's a bad sign. Remove the position so it can
+                            // be re-generated next frame.
                             if (damageBlock == null)
                             {
                                 _blocks.Remove(position);
@@ -148,9 +156,13 @@ namespace RepairVision
 
                             try
                             {
-                                var distanceMod = Math.Max(0f, 1.0f - (scanOffset.Magnitude() / (scanRange * 0.6f)));
+                                // Determine the distance modifier for fading the block.
+                                var distanceMod = Math.Max(0f, 1.0f - scanOffset.Magnitude() / (scanRange * 0.6f));
+                                
+                                // Interpolate the end and start color by HP percent to get the current color.
                                 var blockColor = Color.Lerp(RepairVision.Config.GetEndColor(), RepairVision.Config.GetStartColor(), hpPercent);
                                 blockColor.a = 0.05f * (float)distanceMod;
+                                
                                 foreach (var renderer in damageBlock.GetComponentsInChildren<MeshRenderer>())
                                 {
                                     foreach (var material in renderer.materials)

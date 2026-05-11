@@ -31,7 +31,7 @@ namespace TeamColors
                     return;
                 }
 
-                var activeVehicles = VehicleManager.Instance.vehiclesActive;
+                var activeVehicles = VehicleManager.Instance?.vehiclesActive ??  new List<EntityVehicle>();
                 foreach (var ally in partyMembers)
                 {
                     NavObject allyNavObject = ally.NavObject;

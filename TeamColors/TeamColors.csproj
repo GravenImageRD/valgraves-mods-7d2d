@@ -17,7 +17,7 @@
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
         <PlatformTarget>AnyCPU</PlatformTarget>
         <DebugSymbols>true</DebugSymbols>
-        <DebugType>portable</DebugType>
+        <DebugType>embedded</DebugType>
         <Optimize>false</Optimize>
         <OutputPath>/home/ryand/.local/share/Steam/steamapps/common/7 Days To Die/Mods/TeamColors</OutputPath>
         <DefineConstants>DEBUG;TRACE</DefineConstants>
@@ -27,13 +27,14 @@
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
         <PlatformTarget>AnyCPU</PlatformTarget>
-        <DebugType>pdbonly</DebugType>
+        <DebugType>embedded</DebugType>
         <Optimize>true</Optimize>
         <OutputPath>/home/ryand/.local/share/Steam/steamapps/common/7 Days To Die/Mods/TeamColors</OutputPath>
         <DefineConstants>TRACE</DefineConstants>
         <ErrorReport>prompt</ErrorReport>
         <WarningLevel>4</WarningLevel>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <DebugSymbols>true</DebugSymbols>
     </PropertyGroup>
     <ItemGroup>
         <Compile Include="Helpers.cs" />
