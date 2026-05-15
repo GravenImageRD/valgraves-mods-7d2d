@@ -10,7 +10,7 @@
 //   Colon,  DoubleQuote,  LessThan,  GreaterThan,  QuestionMark
 {
   // Turns on more verbose logging for debugging.
-  "DebugLogging": true,
+  "DebugLogging": false,
   
   "ToggleRepairVisionKeyBind": [ "Alt", "V" ],
   
@@ -32,7 +32,7 @@
   // Ex: 0.67 == 67%, 0.1 == 10%, 1 == 100%
   // NOTE: Using a damage threshold over 90% is not recommended, and 100% should not be used as it will almost
   // certainly impact FPS.
-  "DamageThreshold": 0.9,
+  "DamageThreshold": 0.8,
 
 
   // The number of blocks in all directions to scan for repairable blocks under the damage threshold

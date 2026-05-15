@@ -1,11 +1,14 @@
+using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using UniLinq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Valgraves.Common;
+using WorldGenerationEngineFinal;
+using Object = UnityEngine.Object;
+using Path = System.IO.Path;
 
 namespace RepairVision
 {
@@ -13,6 +16,7 @@ namespace RepairVision
     {
         private static GameObject _blockObject = null;
         private static Material _blockMaterial = null;
+        private static Dictionary<string, GameObject> _prefabObjects = new Dictionary<string, GameObject>();
         private static Dictionary<string, GameObject> _entityObjects = new Dictionary<string, GameObject>();
         private static Dictionary<string, GameObject> _shapeObjects = new Dictionary<string, GameObject>();
 
@@ -169,6 +173,51 @@ namespace RepairVision
             return entityObject;
         }
 
+        public static GameObject GeneratePrefabObject(string prefabName, Vector3i dimensions, Vector3 offset)
+        {
+            if (!_prefabObjects.TryGetValue(prefabName, out GameObject entityObject))
+            {
+                var prefabId = DataLoader.ParseDataPathIdentifier(prefabName);
+                var prefab = DataLoader.LoadAsset<GameObject>(prefabId);
+                if (prefab == null)
+                {
+                    Logging.Error($"Failed to find prefab {prefabName}");
+                    return null;
+                }
+
+                entityObject = new GameObject();
+                // var xOff = (float)Math.Floor(dimensions.x / 2.0f);
+                // var zOff = (float)Math.Floor(dimensions.z / 2.0f);
+                var meshes = prefab.transform.GetComponentsInChildren<MeshFilter>(true);
+                var processedMeshes = new List<string>();
+                foreach (var mesh in meshes)
+                {
+                    var filterName = Regex.Replace(mesh.name, "(_LOD\\d+)$", string.Empty);
+                    if (processedMeshes.Contains(filterName))
+                    {
+                        Logging.Warning($"Skipping mesh {mesh.name} because it is an extra LOD");
+                        continue;
+                    }
+                
+                    processedMeshes.Add(filterName);
+                    var meshObject = new GameObject();
+                    meshObject.AddComponent<MeshFilter>().mesh = mesh.mesh;
+                    meshObject.AddComponent<MeshRenderer>().material = GetBlockMaterial();
+                    var localPos = prefab.transform.InverseTransformPoint(mesh.transform.position);
+                    var localRot = Quaternion.Inverse(prefab.transform.rotation) * mesh.transform.rotation;
+                    meshObject.transform.localScale = GetRelativeScale(prefab.transform.lossyScale, mesh.transform.lossyScale);
+                    meshObject.transform.localPosition = localPos;// - new Vector3(xOff, 0, zOff) + offset;
+                    meshObject.transform.localRotation = localRot;
+                    meshObject.transform.SetParent(entityObject.transform);
+                }
+                entityObject.SetActive(false);
+            }
+
+            var newEntityObject = Object.Instantiate(entityObject);
+            newEntityObject.SetActive(true);
+            return newEntityObject;
+        }
+        
         public static GameObject GenerateEntityObject(ref BlockEntityData tileEntity)
         {
             if (!_entityObjects.TryGetValue(tileEntity.blockValue.Block.GetBlockName(), out GameObject entityObject))

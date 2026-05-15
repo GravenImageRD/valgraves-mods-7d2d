@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using HarmonyLib;
+using Newtonsoft.Json;
 using UniLinq;
 using UnityEngine;
 using Valgraves.Common;
@@ -26,8 +29,15 @@ namespace RepairVision
             BlockHelpers.CleanUp();
         }
 
+        private static Stopwatch _updateTimer = new Stopwatch();
+        
         private static bool SkipProcessing()
         {
+            if (Player.Entity == null)
+            {
+                return true;
+            }
+            
             if (RepairVision.RepairVisionActions.ToggleRepairVision.WasPressed)
             {
                 _repairVisionEnabled = !_repairVisionEnabled;
@@ -45,8 +55,9 @@ namespace RepairVision
             {
                 Player.Entity.Buffs.RemoveBuff("repairVision");
             }
+
             
-            return !_repairVisionEnabled;
+            return !_repairVisionEnabled || (_updateTimer.IsRunning && _updateTimer.ElapsedMilliseconds < 100);
         }
         
         public static void Postfix(EntityPlayerLocal __instance)
@@ -58,10 +69,11 @@ namespace RepairVision
                     return;
                 }
 
+                _updateTimer.Restart();
                 var scanRange = RepairVision.Config.ScanRange;
                 var center = Player.Entity.position.FloorToInt();
                 var centerWorld = Player.Entity.transform.position.FloorToInt();
-                List<Vector3i> nearBlockPositions = new List<Vector3i>();
+                HashSet<Vector3i> nearBlockPositions = new HashSet<Vector3i>();
                 for (int i = -scanRange; i <= scanRange; i++)
                 {
                     for (int j = -scanRange; j <= scanRange; j++)
@@ -70,10 +82,17 @@ namespace RepairVision
                         {
                             var scanOffset = new Vector3i(i, j, k);
                             var position = center + scanOffset;
+                            
+                            // Check to see if position was already processed by a multiblock
+                            if (nearBlockPositions.Contains(position))
+                            {
+                                continue;
+                            }
+                            
                             var blockValue = GameManager.Instance.World.GetBlock(position);
-
+                            
                             // Skip for terrain and unrepairable blocks.
-                            if (blockValue.isair || blockValue.isTerrain || blockValue.isWater || !blockValue.Block.CanRepair(blockValue))
+                            if (blockValue.isair || blockValue.isTerrain || blockValue.isWater || !blockValue.Block.CanRepair(blockValue) || blockValue.ischild)
                             {
                                 continue;
                             }
@@ -95,7 +114,7 @@ namespace RepairVision
                             // If we don't already have this block generated, generate it now.
                             if (!_blocks.TryGetValue(position, out GameObject damageBlock))
                             {
-                                var blockPosition = (centerWorld + scanOffset).ToVector3();
+                                var blockPosition = position.ToVector3() - Origin.position;//(centerWorld + scanOffset).ToVector3();
                                 var blockRotation = blockValue.Block.shape.GetRotation(blockValue);
                                 
                                 // Handle BlockShapes.
@@ -119,6 +138,32 @@ namespace RepairVision
                                             damageBlock.transform.rotation = blockEntity.transform.rotation;
                                         }
                                     }                                    
+                                }
+                                // Handle multiblocks.
+                                else if (blockValue.Block.isMultiBlock)
+                                {
+                                    var modelEntity = blockValue.Block.shape as BlockShapeModelEntity;
+                                    Logging.Error($"Block {blockValue.Block.blockName} bsme {modelEntity.modelName} offset ({modelEntity.modelOffset})");
+                                    if (nearBlockPositions.Contains(blockValue.parent))
+                                    {
+                                        continue;
+                                    }
+
+                                    if (!_blocks.TryGetValue(blockValue.parent, out damageBlock))
+                                    {
+                                        var modelProperty = blockValue.Block.dynamicProperties.GetString("Model");
+                                        if (!string.IsNullOrEmpty(modelProperty))
+                                        {
+                                            var dimensions = blockValue.Block.multiBlockPos.dim;
+                                            var xOff = (float)Math.Floor(dimensions.x / 2.0f);
+                                            var zOff = (float)Math.Floor(dimensions.z / 2.0f);
+                                            var offset = modelEntity.GetRotatedOffset(blockValue.Block, modelEntity.GetRotation(blockValue));
+                                            damageBlock = BlockHelpers.GeneratePrefabObject(modelEntity.modelNameWithPath, dimensions, offset);
+                                            blockPosition += offset;
+                                            blockPosition += new Vector3(0.5f, 0.0f, 0.5f);
+                                            damageBlock.transform.rotation = blockRotation;
+                                        }
+                                    }
                                 }
 
                                 // If we don't have a generated block at this point, fall back to a basic cube.

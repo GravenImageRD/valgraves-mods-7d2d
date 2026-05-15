@@ -91,6 +91,10 @@
         <HintPath>..\..\..\.local\share\Steam\steamapps\common\7 Days To Die\7DaysToDie_Data\Managed\System.dll</HintPath>
           <Private>False</Private>
       </Reference>
+      <Reference Include="Unity.Addressables">
+        <HintPath>..\..\..\.local\share\Steam\steamapps\common\7 Days To Die\7DaysToDie_Data\Managed\Unity.Addressables.dll</HintPath>
+          <Private>False</Private>
+      </Reference>
       <Reference Include="UnityEngine">
         <HintPath>..\..\..\.local\share\Steam\steamapps\common\7 Days To Die\7DaysToDie_Data\Managed\UnityEngine.dll</HintPath>
           <Private>False</Private>

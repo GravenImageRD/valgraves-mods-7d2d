@@ -14,15 +14,11 @@ namespace Valgraves.Common
         {
             get
             {
-                if (GameManager.Instance.worldCreated)
+                _currentPlayer = GameManager.Instance.World?.GetPrimaryPlayer();
+                if (_currentPlayer == null)
                 {
-                    _currentPlayer = GameManager.Instance.World?.GetPrimaryPlayer();
-                    if (_currentPlayer == null)
-                    {
-                        Log.Warning("Could not find primary player.");
-                    }
+                    Logging.Warning("Could not find primary player.");
                 }
-
                 return _currentPlayer;
             }
         }
