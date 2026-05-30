@@ -300,7 +300,6 @@ namespace RepairVision
         {
             var newBlock = Object.Instantiate(_blockObject);
             newBlock.SetActive(true);
-            SceneManager.MoveGameObjectToScene(newBlock, SceneManager.GetActiveScene());
             return newBlock;
         }
 
@@ -313,7 +312,6 @@ namespace RepairVision
             _blockMaterial = materials[1];
             var fadeStart = (int)Math.Floor(RepairVision.Config.ScanRange / 3.0f);
             var fadeEnd = (int)Math.Floor(fadeStart * 2.0);
-            // Logging.Error($"Setting material FadeStart to {fadeStart} and FadeEnd to {fadeEnd}");
             _blockMaterial.SetFloat("_FadeStartDist", fadeStart);
             _blockMaterial.SetFloat("_FadeEndDist", fadeEnd);
             
