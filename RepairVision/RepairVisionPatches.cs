@@ -48,12 +48,13 @@ namespace RepairVision
                     if (_scanRunning)
                     {
                         player.StopCoroutine(_scanCoroutine);
-                        foreach (var block in _blocks.Values)
-                        {
-                            block.SetActive(false);
-                        }
-
+                        _scanCoroutine = null;
                         _scanRunning = false;
+                    }
+                    
+                    foreach (var block in _blocks.Values)
+                    {
+                        block.SetActive(false);
                     }
                 }
                 else
@@ -77,15 +78,11 @@ namespace RepairVision
 
         private static bool _scanRunning = false;
         private static Coroutine _scanCoroutine = null;
-        
-        private static IEnumerator ScanCoroutine(EntityPlayerLocal player)
+        private static List<Vector3i> _scanOffsets = new List<Vector3i>();
+        private static float _timePerFrame = 1f / 10000f;
+
+        public static void Initialize(int scanRange)
         {
-            _scanRunning = true;
-            float passTime = 0.5f / 1000f;
-            var scanRange = RepairVision.Config.ScanRange;
-            var center = player.position.FloorToInt();
-            var centerWorld = player.transform.position.FloorToInt();
-            List<Vector3i> nearBlockPositions = new List<Vector3i>();
             for (int i = -scanRange; i <= scanRange; i++)
             {
                 for (int j = -scanRange; j <= scanRange; j++)
@@ -93,15 +90,26 @@ namespace RepairVision
                     for (int k = -scanRange; k <= scanRange; k++)
                     {
                         var scanOffset = new Vector3i(i, j, k);
-                        nearBlockPositions.Add(center + scanOffset);
+                        _scanOffsets.Add(scanOffset);
                     }
                 }
+            }
+        }
+        
+        private static IEnumerator ScanCoroutine(EntityPlayerLocal player)
+        {
+            _scanRunning = true;
+            var center = player.position.FloorToInt();
+            List<Vector3i> nearBlockPositions = new List<Vector3i>();
+            foreach (var offset in _scanOffsets)
+            {
+                nearBlockPositions.Add(center + offset);
             }
 
             for (int i = 0; i < nearBlockPositions.Count; i++)
             {
                 double frameStartTime = Time.realtimeSinceStartupAsDouble;
-                while (i < nearBlockPositions.Count && passTime > (Time.realtimeSinceStartupAsDouble - frameStartTime))
+                while (i < nearBlockPositions.Count && _timePerFrame > (Time.realtimeSinceStartupAsDouble - frameStartTime))
                 {
                     var position = nearBlockPositions[i++];
                     var blockValue = GameManager.Instance.World.GetBlock(position);
@@ -191,6 +199,7 @@ namespace RepairVision
                             }
                                     
                             damageBlock.transform.position = blockPosition;
+                            damageBlock.gameObject.SetActive(true);
                             _blocks.Add(position, damageBlock);
                         }
 
@@ -198,14 +207,6 @@ namespace RepairVision
                         // be re-generated next frame.
                         if (!damageBlock || !damageBlock.transform)
                         {
-                            _blocks.Remove(position);
-                            continue;
-                        }
-                                
-                        // Delete old blocks if the block is now repaired enough.
-                        if (hpPercent > RepairVision.Config.DamageThreshold)
-                        {
-                            Object.Destroy(_blocks[position]);
                             _blocks.Remove(position);
                             continue;
                         }
@@ -228,19 +229,25 @@ namespace RepairVision
 
                 if (i < nearBlockPositions.Count)
                 {
-                    Logging.Error($"Pass complete, {nearBlockPositions.Count - i} blocks to go");
                     yield return null;
                 }
             }
             
             // Remove far blocks.
-            Logging.Error("Scanning complete, cleaning up far blocks");
-            var farBlockPositions = _blocks.Keys.Except(nearBlockPositions).ToList();
-            foreach (var position in farBlockPositions)
-            {
-                Object.Destroy(_blocks[position]);
-                _blocks.Remove(position);
-            }
+            // var farBlockPositions = _blocks.Keys.Except(nearBlockPositions).ToList();
+            // foreach (var position in farBlockPositions)
+            // {
+            //     try
+            //     {
+            //         Logging.Error($"Cleaning up far block at pos ({position})");
+            //         Object.Destroy(_blocks[position]);
+            //         _blocks.Remove(position);
+            //     }
+            //     catch (Exception e)
+            //     {
+            //         Logging.Error(e.ToString());
+            //     }
+            // }
             
             _scanRunning = false;
         }
