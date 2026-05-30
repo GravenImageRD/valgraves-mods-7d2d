@@ -216,7 +216,7 @@ namespace RepairVision
                         foreach (var renderer in damageBlock.GetComponentsInChildren<MeshRenderer>())
                         {
                             foreach (var material in renderer.materials)
-                            {
+                            {                                
                                 material.SetColor("_Color", blockColor);
                             }
                         }
@@ -234,20 +234,19 @@ namespace RepairVision
             }
             
             // Remove far blocks.
-            // var farBlockPositions = _blocks.Keys.Except(nearBlockPositions).ToList();
-            // foreach (var position in farBlockPositions)
-            // {
-            //     try
-            //     {
-            //         Logging.Error($"Cleaning up far block at pos ({position})");
-            //         Object.Destroy(_blocks[position]);
-            //         _blocks.Remove(position);
-            //     }
-            //     catch (Exception e)
-            //     {
-            //         Logging.Error(e.ToString());
-            //     }
-            // }
+            var farBlockPositions = _blocks.Keys.Except(nearBlockPositions).ToList();
+            foreach (var position in farBlockPositions)
+            {
+                try
+                {
+                    Object.Destroy(_blocks[position]);
+                    _blocks.Remove(position);
+                }
+                catch (Exception e)
+                {
+                    Logging.Error(e.ToString());
+                }
+            }
             
             _scanRunning = false;
         }
