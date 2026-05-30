@@ -18,8 +18,8 @@
   // that is used when the block hits the damage threshold and an end color for when the object hits 0 HP
   // Color values are set using hex codes. Note that due to how color interpolation works some color pairs
   // may have a mid-range that is basically invisible which is likely to be problematic.
-  "StartColor": "#FFEB04",
-  "EndColor": "#CC0000",
+  "StartColor": "#FFEB0440",
+  "EndColor": "#CC000040",
 
   // !!!!!! WARNING !!!!!!!!!!!
   // Increasing the following values may have noticeable impact on performance due to needing to process more

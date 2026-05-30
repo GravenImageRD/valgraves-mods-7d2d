@@ -6,8 +6,8 @@ namespace RepairVision
 {
     public class RepairVisionConfig : ValgravesConfig<RepairVisionConfig>
     {
-        private Color _startColor = new Color(1f, 0.92156863f, 0.015686275f);
-        private Color _endColor = new Color(0.8f, 0f, 0f);
+        private Color _startColor = new Color(1f, 0.92156863f, 0.015686275f, 0.25f);
+        private Color _endColor = new Color(0.8f, 0f, 0f, 0.25f);
         
         public List<string> ToggleRepairVisionKeyBind { get; set; } = new List<string>();
         public float DamageThreshold { get; set; } = 0.9f;

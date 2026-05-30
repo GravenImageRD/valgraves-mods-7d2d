@@ -20,6 +20,7 @@ namespace RepairVision
                 Logging.EnableDebugLogging();
             }
             RepairVisionActions = new RepairVisionActions();
+            BlockHelpers.Initialize();
         }
     }
 }

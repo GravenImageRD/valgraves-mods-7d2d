@@ -115,106 +115,101 @@ namespace RepairVision
                     var hpPercent = (1.0f * (blockValue.Block.MaxDamage - blockValue.damage)) / blockValue.Block.MaxDamage;
                             
                     // If the block isn't in bad shape, skip it and move on, removing tracked block if needed.
-                    if (hpPercent > RepairVision.Config.DamageThreshold)
-                    {
-                        if (_blocks.TryGetValue(position, out GameObject existingBlock))
-                        {
-                            Object.Destroy(existingBlock);
-                            _blocks.Remove(position);
-                        }
-                        continue;
-                    }
-                            
-                    // If we don't already have this block generated, generate it now.
-                    if (!_blocks.TryGetValue(position, out GameObject damageBlock))
-                    {
-                        var blockPosition = position.ToVector3() - Origin.position;
-                        var blockRotation = blockValue.Block.shape.GetRotation(blockValue);
-                                
-                        // Handle BlockShapes.
-                        if (blockValue.Block.shape is BlockShapeNew blockShape)
-                        {
-                            damageBlock = BlockHelpers.GenerateShapeObject(ref blockValue, ref blockShape);
-                            var pivot = damageBlock.GetComponentsInChildren<Transform>().First(x => x.name == "pivot");
-                            pivot.transform.rotation = blockRotation;
-                        }
-                        // Handle block entities.
-                        else if (blockValue.Block.HasTileEntity)
-                        {
-                            var chunk = GameManager.Instance.World.GetChunkFromWorldPos(position);
-                            var blockEntity = chunk.GetBlockEntity(position);
-                            if (blockEntity != null && blockEntity.bHasTransform)
-                            {
-                                damageBlock = BlockHelpers.GenerateEntityObject(ref blockEntity);
-                                if (damageBlock != null)
-                                {
-                                    blockPosition = blockEntity.transform.position;
-                                    damageBlock.transform.rotation = blockEntity.transform.rotation;
-                                }
-                            }                                    
-                        }
-                        // Handle multiblocks.
-                        else if (blockValue.Block.isMultiBlock)
-                        {
-                            var modelEntity = blockValue.Block.shape as BlockShapeModelEntity;
-                            Logging.Error($"Block {blockValue.Block.blockName} bsme {modelEntity.modelName} offset ({modelEntity.modelOffset})");
-                            if (nearBlockPositions.Contains(blockValue.parent))
-                            {
-                                continue;
-                            }
-
-                            if (!_blocks.TryGetValue(blockValue.parent, out damageBlock))
-                            {
-                                var modelProperty = blockValue.Block.dynamicProperties.GetString("Model");
-                                if (!string.IsNullOrEmpty(modelProperty))
-                                {
-                                    var dimensions = blockValue.Block.multiBlockPos.dim;
-                                    var xOff = (float)Math.Floor(dimensions.x / 2.0f);
-                                    var zOff = (float)Math.Floor(dimensions.z / 2.0f);
-                                    var offset = modelEntity.GetRotatedOffset(blockValue.Block, modelEntity.GetRotation(blockValue));
-                                    damageBlock = BlockHelpers.GeneratePrefabObject(modelEntity.modelNameWithPath, dimensions, offset);
-                                    blockPosition += offset;
-                                    blockPosition += new Vector3(0.5f, 0.0f, 0.5f);
-                                    damageBlock.transform.rotation = blockRotation;
-                                }
-                            }
-                        }
-
-                        // If we don't have a generated block at this point, fall back to a basic cube.
-                        if (damageBlock == null)
-                        {
-                            damageBlock = BlockHelpers.GenerateBlockObject();
-                            damageBlock.transform.rotation = blockRotation;
-                            blockPosition += Vector3.one * 0.5f;
-                        }
-                                
-                        damageBlock.transform.position = blockPosition;
-                        _blocks.Add(position, damageBlock);
-                    }
-
-                    // If we got here and have a null block, that's a bad sign. Remove the position so it can
-                    // be re-generated next frame.
-                    if (damageBlock == null)
-                    {
-                        _blocks.Remove(position);
-                        continue;
-                    }
-                            
-                    // Delete old blocks if the block is now repaired enough.
-                    if (hpPercent > RepairVision.Config.DamageThreshold)
-                    {
-                        Object.Destroy(_blocks[position]);
-                        _blocks.Remove(position);
-                        continue;
-                    }
-
-                    if (damageBlock.transform == null)
-                    {
-                        continue;
-                    }
-
                     try
                     {
+                        if (hpPercent > RepairVision.Config.DamageThreshold)
+                        {
+                            if (_blocks.TryGetValue(position, out GameObject existingBlock))
+                            {
+                                Object.Destroy(existingBlock);
+                                _blocks.Remove(position);
+                            }
+                            continue;
+                        }
+                                
+                        // If we don't already have this block generated, generate it now.
+                        if (!_blocks.TryGetValue(position, out GameObject damageBlock))
+                        {
+                            var blockPosition = position.ToVector3() - Origin.position;
+                            var blockRotation = blockValue.Block.shape.GetRotation(blockValue);
+                                    
+                            // Handle BlockShapes.
+                            if (blockValue.Block.shape is BlockShapeNew blockShape)
+                            {
+                                damageBlock = BlockHelpers.GenerateShapeObject(ref blockValue, ref blockShape);
+                                var pivot = damageBlock.GetComponentsInChildren<Transform>().First(x => x.name == "pivot");
+                                pivot.transform.rotation = blockRotation;
+                            }
+                            // Handle block entities.
+                            else if (blockValue.Block.HasTileEntity)
+                            {
+                                var chunk = GameManager.Instance.World.GetChunkFromWorldPos(position);
+                                var blockEntity = chunk.GetBlockEntity(position);
+                                if (blockEntity != null && blockEntity.bHasTransform)
+                                {
+                                    damageBlock = BlockHelpers.GenerateEntityObject(ref blockEntity);
+                                    if (damageBlock)
+                                    {
+                                        blockPosition = blockEntity.transform.position;
+                                        damageBlock.transform.rotation = blockEntity.transform.rotation;
+                                    }
+                                }                                    
+                            }
+                            // Handle multiblocks.
+                            else if (blockValue.Block.isMultiBlock)
+                            {
+                                var modelEntity = blockValue.Block.shape as BlockShapeModelEntity;
+                                Logging.Error($"Block {blockValue.Block.blockName} bsme {modelEntity.modelName} offset ({modelEntity.modelOffset})");
+                                if (nearBlockPositions.Contains(blockValue.parent))
+                                {
+                                    continue;
+                                }
+
+                                if (!_blocks.TryGetValue(blockValue.parent, out damageBlock))
+                                {
+                                    var modelProperty = blockValue.Block.dynamicProperties.GetString("Model");
+                                    if (!string.IsNullOrEmpty(modelProperty))
+                                    {
+                                        var dimensions = blockValue.Block.multiBlockPos.dim;
+                                        var xOff = (float)Math.Floor(dimensions.x / 2.0f);
+                                        var zOff = (float)Math.Floor(dimensions.z / 2.0f);
+                                        var offset = modelEntity.GetRotatedOffset(blockValue.Block, modelEntity.GetRotation(blockValue));
+                                        damageBlock = BlockHelpers.GeneratePrefabObject(modelEntity.modelNameWithPath, dimensions, offset);
+                                        blockPosition += offset;
+                                        blockPosition += new Vector3(0.5f, 0.0f, 0.5f);
+                                        damageBlock.transform.rotation = blockRotation;
+                                    }
+                                }
+                            }
+
+                            // If we don't have a generated block at this point, fall back to a basic cube.
+                            if (!damageBlock)
+                            {
+                                damageBlock = BlockHelpers.GenerateBlockObject();
+                                damageBlock.transform.rotation = blockRotation;
+                                blockPosition += Vector3.one * 0.5f;
+                            }
+                                    
+                            damageBlock.transform.position = blockPosition;
+                            _blocks.Add(position, damageBlock);
+                        }
+
+                        // If we got here and have a null block, that's a bad sign. Remove the position so it can
+                        // be re-generated next frame.
+                        if (!damageBlock || !damageBlock.transform)
+                        {
+                            _blocks.Remove(position);
+                            continue;
+                        }
+                                
+                        // Delete old blocks if the block is now repaired enough.
+                        if (hpPercent > RepairVision.Config.DamageThreshold)
+                        {
+                            Object.Destroy(_blocks[position]);
+                            _blocks.Remove(position);
+                            continue;
+                        }
+                    
                         // Interpolate the end and start color by HP percent to get the current color.
                         var blockColor = Color.Lerp(RepairVision.Config.GetEndColor(), RepairVision.Config.GetStartColor(), hpPercent);
                         foreach (var renderer in damageBlock.GetComponentsInChildren<MeshRenderer>())
