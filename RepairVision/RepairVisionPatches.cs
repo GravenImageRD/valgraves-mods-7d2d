@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using HarmonyLib;
 using UniLinq;
 using UnityEngine;
@@ -79,6 +78,7 @@ namespace RepairVision
 
         public static void Initialize(int scanRange)
         {
+            _timePerFrame = RepairVision.Config.MsPerFrame / 1000f;
             for (int i = -scanRange; i <= scanRange; i++)
             {
                 for (int j = -scanRange; j <= scanRange; j++)
@@ -108,6 +108,7 @@ namespace RepairVision
             for (int i = 0; i < nearBlockPositions.Count; i++)
             {
                 double frameStartTime = Time.realtimeSinceStartupAsDouble;
+                int startI = i;
                 while (i < nearBlockPositions.Count && _timePerFrame > (Time.realtimeSinceStartupAsDouble - frameStartTime))
                 {
                     var position = nearBlockPositions[i++];
@@ -230,6 +231,15 @@ namespace RepairVision
 
                 if (i < nearBlockPositions.Count)
                 {
+                    var blocksProcessed = i - startI;
+                    if (blocksProcessed < 100)
+                    {
+                        Logging.Error($"RepairVision scan only processed {i-startI} blocks with time allocation {_timePerFrame}ms! Consider adjusting!");
+                    } else if (blocksProcessed < 500)
+                    {
+                        Logging.Warning($"RepairVision scan only processed {i-startI} blocks with time allocation {_timePerFrame}ms! Consider adjusting!");
+                    }
+
                     yield return null;
                 }
             }
@@ -238,7 +248,6 @@ namespace RepairVision
             var farBlockPositions = _blocks.Keys.Except(nearBlockPositions).ToList();
             foreach (var position in farBlockPositions)
             {
-                Logging.Error($"Position {position} had far block, removing.");
                 Origin.Remove(_blocks[position].transform);
                 Object.Destroy(_blocks[position]);
                 _blocks.Remove(position);

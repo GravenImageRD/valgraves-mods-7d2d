@@ -28,16 +28,29 @@
   // the mod.
   // !!!!!! WARNING !!!!!!!!!!!
 
-  // A value form 0 to 1 setting the percentage at which RepairVision will highlight objects
+  // A value form 0 to 1 setting the percentage of remaining health at which RepairVision will highlight objects
   // Ex: 0.67 == 67%, 0.1 == 10%, 1 == 100%
   // NOTE: Using a damage threshold over 90% is not recommended, and 100% should not be used as it will almost
   // certainly impact FPS.
   "DamageThreshold": 0.8,
 
-
   // The number of blocks in all directions to scan for repairable blocks under the damage threshold
   // Note that larger values will put a heavier strain on processing when RepairVision is turned on and
   // increase memory usage. If you increase this number it is strongly recommended that you reduce DamageThreshold.
   // Ex: 25 scans a 50 block cube with the player at the center
-  "ScanRange": 25
+  // NOTE: This also effects when blocks fade out from distance. They will start to fade out at one third of the scan
+  // range, completely fading out at two thirds, so for 25 they will start fading out around 8 blocks and be completely
+  // faded out at around 16. This is intended to keep them from just popping out of existence.
+  "ScanRange": 25,
+  
+  // The number of milliseconds per frame that can be used to scan and update blocks states. This is to prevent a major
+  // impact to FPS in very densely packed areas. Can be a fractional amount, like 0.5 for half a millisecond. Some simplified
+  // example math: if you are getting 60FPS uncapped that is roughly 17ms per frame, so allocating 1ms for RepairVision will 
+  // raise your frame time to 18ms which would drop you to around 57FPS. The shorter the time per frame, the longer it will take
+  // to process a full scan. Note that this simple math doesn't account for if you are GPU bound rather than CPU bound, meaning
+  // you may see no actual frame loss since the scanning cost is almost entirely on the CPU. I recommend 1ms to start and then
+  // if you see it is still causing trouble you can can adjust it down. It will warn in the console if your allocation is updating
+  // less than 500 blocks a frame, and error if it is less than 100, as a scan range of 25 means 50x50x50 blocks, or 125,000 blocks
+  // which at 500 blocks would take 250 frames, or over 4s at 60FPS, and 100 would be 1250 frames, or more than 20s per pass.  
+  "MsPerFrame": 1
 }
