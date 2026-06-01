@@ -308,8 +308,8 @@ namespace RepairVision
             var exePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             var bundlePath = Path.Combine(exePath, "Resources", "repairvision.unity3d");
             var bundle = AssetBundle.LoadFromFile(bundlePath);
-            var materials = bundle.LoadAllAssets<Material>();
-            _blockMaterial = materials[1];
+            var shaders = bundle.LoadAllAssets<Shader>();
+            _blockMaterial = new Material(shaders[0]);
             var fadeStart = (int)Math.Floor(RepairVision.Config.ScanRange / 3.0f);
             var fadeEnd = (int)Math.Floor(fadeStart * 2.0);
             _blockMaterial.SetFloat("_FadeStartDist", fadeStart);

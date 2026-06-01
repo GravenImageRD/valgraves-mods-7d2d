@@ -2,9 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using HarmonyLib;
-using Newtonsoft.Json;
 using UniLinq;
 using UnityEngine;
 using Valgraves.Common;
@@ -18,6 +16,10 @@ namespace RepairVision
     {
         private static bool _repairVisionEnabled = false;
         private static Dictionary<Vector3i, GameObject> _blocks = new Dictionary<Vector3i, GameObject>();
+        private static bool _scanRunning = false;
+        private static Coroutine _scanCoroutine = null;
+        private static List<Vector3i> _scanOffsets = new List<Vector3i>();
+        private static float _timePerFrame = 1f / 10000f;
         
         private static void CleanUpObjects()
         {
@@ -25,13 +27,12 @@ namespace RepairVision
             _blocks = new Dictionary<Vector3i, GameObject>();
             foreach (var blockObject in oldBlocks)
             {
+                Origin.Remove(blockObject.transform);
                 Object.Destroy(blockObject);
             }
             BlockHelpers.CleanUp();
         }
 
-        private static Stopwatch _updateTimer = new Stopwatch();
-        
         private static bool SkipProcessing(EntityPlayerLocal player)
         {
             if (player == null)
@@ -76,11 +77,6 @@ namespace RepairVision
             return !_repairVisionEnabled;
         }
 
-        private static bool _scanRunning = false;
-        private static Coroutine _scanCoroutine = null;
-        private static List<Vector3i> _scanOffsets = new List<Vector3i>();
-        private static float _timePerFrame = 1f / 10000f;
-
         public static void Initialize(int scanRange)
         {
             for (int i = -scanRange; i <= scanRange; i++)
@@ -94,6 +90,9 @@ namespace RepairVision
                     }
                 }
             }
+            
+            // Sort offsets from inside out.
+            _scanOffsets.Sort((x, y) => x.Magnitude().CompareTo(y.Magnitude()));
         }
         
         private static IEnumerator ScanCoroutine(EntityPlayerLocal player)
@@ -129,6 +128,7 @@ namespace RepairVision
                         {
                             if (_blocks.TryGetValue(position, out GameObject existingBlock))
                             {
+                                Origin.Remove(existingBlock.transform);
                                 Object.Destroy(existingBlock);
                                 _blocks.Remove(position);
                             }
@@ -199,7 +199,7 @@ namespace RepairVision
                             }
                                     
                             damageBlock.transform.position = blockPosition;
-                            damageBlock.gameObject.SetActive(true);
+                            Origin.Add(damageBlock.transform, 0);
                             _blocks.Add(position, damageBlock);
                         }
 
@@ -207,6 +207,7 @@ namespace RepairVision
                         // be re-generated next frame.
                         if (!damageBlock || !damageBlock.transform)
                         {
+                            Logging.Error($"Position {position} had bad block, removing.");
                             _blocks.Remove(position);
                             continue;
                         }
@@ -216,7 +217,7 @@ namespace RepairVision
                         foreach (var renderer in damageBlock.GetComponentsInChildren<MeshRenderer>())
                         {
                             foreach (var material in renderer.materials)
-                            {                                
+                            {
                                 material.SetColor("_Color", blockColor);
                             }
                         }
@@ -237,15 +238,10 @@ namespace RepairVision
             var farBlockPositions = _blocks.Keys.Except(nearBlockPositions).ToList();
             foreach (var position in farBlockPositions)
             {
-                try
-                {
-                    Object.Destroy(_blocks[position]);
-                    _blocks.Remove(position);
-                }
-                catch (Exception e)
-                {
-                    Logging.Error(e.ToString());
-                }
+                Logging.Error($"Position {position} had far block, removing.");
+                Origin.Remove(_blocks[position].transform);
+                Object.Destroy(_blocks[position]);
+                _blocks.Remove(position);
             }
             
             _scanRunning = false;
