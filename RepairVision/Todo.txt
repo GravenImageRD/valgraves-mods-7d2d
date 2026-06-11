@@ -1,5 +1,6 @@
+1.2:
 * VFX: Choose to use threshold colors (eg. yellow at 90%, orange at 50%, red at 30%) instead of interpolation
-* VFX: Visual effect when toggling on (ripple out) and off (fade out)
+* Perf: Block updates are handled when blocks are damaged rather than being done as part 
 * VFX: Update vision based on mesh state (open doors, spinning traps, etc.)
 * Gameplay: Enable only with mod on held repair tool, toggled with F like a light source
 * Gameplay: Visible mod on repair tools

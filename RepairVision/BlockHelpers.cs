@@ -19,6 +19,8 @@ namespace RepairVision
         private static Dictionary<string, GameObject> _prefabObjects = new Dictionary<string, GameObject>();
         private static Dictionary<string, GameObject> _entityObjects = new Dictionary<string, GameObject>();
         private static Dictionary<string, GameObject> _shapeObjects = new Dictionary<string, GameObject>();
+        public static float FadeStart;
+        public static float FadeEnd;
 
         private static Vector3 GetRelativeScale(Vector3 rootScale, Vector3 childScale)
         {
@@ -46,7 +48,7 @@ namespace RepairVision
             else
             {
                 frameObject.AddComponent<MeshFilter>().mesh = frameMesh.mesh;
-                frameObject.AddComponent<MeshRenderer>().sharedMaterial = _blockMaterial;
+                frameObject.AddComponent<MeshRenderer>().material = _blockMaterial;
                 frameObject.transform.localScale = GetRelativeScale(tileEntity.transform.lossyScale, frameMesh.transform.lossyScale);
                 frameObject.transform.localPosition = tileEntity.transform.InverseTransformPoint(frameMesh.transform.position);
                 frameObject.transform.localRotation = Quaternion.Inverse(tileEntity.transform.rotation) * frameMesh.transform.rotation;
@@ -71,7 +73,7 @@ namespace RepairVision
                     doorMaterials.Add(_blockMaterial);
                 }
 
-                doorRenderer.sharedMaterials = doorMaterials.ToArray();
+                doorRenderer.materials = doorMaterials.ToArray();
                 doorObject.transform.localScale = GetRelativeScale(tileEntity.transform.lossyScale, doorMesh.transform.lossyScale);
                 doorObject.transform.localPosition = tileEntity.transform.InverseTransformPoint(doorMesh.transform.position);
                 doorObject.transform.localRotation = Quaternion.Inverse(tileEntity.transform.rotation) * doorMesh.transform.rotation;
@@ -101,7 +103,7 @@ namespace RepairVision
             
             var baseObject = new GameObject();
             baseObject.AddComponent<MeshFilter>().mesh = baseMesh.mesh;
-            baseObject.AddComponent<MeshRenderer>().sharedMaterial = _blockMaterial;
+            baseObject.AddComponent<MeshRenderer>().material = _blockMaterial;
             baseObject.transform.localScale = GetRelativeScale(tileEntity.transform.lossyScale, baseMesh.transform.lossyScale);
             baseObject.transform.SetParent(entityObject.transform);
             
@@ -115,7 +117,7 @@ namespace RepairVision
             {
                 var rotateObject = new GameObject();
                 rotateObject.AddComponent<MeshFilter>().mesh = rotateMesh.mesh;
-                rotateObject.AddComponent<MeshRenderer>().sharedMaterial = _blockMaterial;
+                rotateObject.AddComponent<MeshRenderer>().material = _blockMaterial;
                 rotateObject.transform.localScale = GetRelativeScale(tileEntity.transform.lossyScale, rotateMesh.transform.lossyScale);
                 rotateObject.transform.localPosition = tileEntity.transform.InverseTransformPoint(rotateChild.transform.position);
                 rotateObject.transform.localRotation = Quaternion.Inverse(tileEntity.transform.rotation) * rotateChild.transform.rotation;
@@ -132,7 +134,7 @@ namespace RepairVision
                     var pitchObject = new GameObject();
                     pitchObject.AddComponent<MeshFilter>().mesh = pitchMesh.mesh;
                     var pitchRenderer = pitchObject.AddComponent<MeshRenderer>();
-                    pitchRenderer.sharedMaterials = new Material[] { _blockMaterial, _blockMaterial };
+                    pitchRenderer.materials = new Material[] { _blockMaterial, _blockMaterial };
                     pitchObject.transform.localScale = GetRelativeScale(tileEntity.transform.lossyScale, pitchMesh.transform.lossyScale);
                     pitchObject.transform.localPosition = tileEntity.transform.InverseTransformPoint(pitchChild.transform.position);
                     pitchObject.transform.localRotation = Quaternion.Inverse(tileEntity.transform.rotation) * pitchChild.transform.rotation;
@@ -161,7 +163,7 @@ namespace RepairVision
                 processedMeshes.Add(filterName);
                 var meshObject = new GameObject();
                 meshObject.AddComponent<MeshFilter>().mesh = mesh.mesh;
-                meshObject.AddComponent<MeshRenderer>().sharedMaterial = _blockMaterial;
+                meshObject.AddComponent<MeshRenderer>().material = _blockMaterial;
                 var localPos = tileEntity.transform.InverseTransformPoint(mesh.transform.position);
                 var localRot = Quaternion.Inverse(tileEntity.transform.rotation) * mesh.transform.rotation;
                 meshObject.transform.localScale = GetRelativeScale(tileEntity.transform.lossyScale, mesh.transform.lossyScale);
@@ -202,7 +204,7 @@ namespace RepairVision
                     processedMeshes.Add(filterName);
                     var meshObject = new GameObject();
                     meshObject.AddComponent<MeshFilter>().mesh = mesh.mesh;
-                    meshObject.AddComponent<MeshRenderer>().sharedMaterial = _blockMaterial;
+                    meshObject.AddComponent<MeshRenderer>().material = _blockMaterial;
                     var localPos = prefab.transform.InverseTransformPoint(mesh.transform.position);
                     var localRot = Quaternion.Inverse(prefab.transform.rotation) * mesh.transform.rotation;
                     meshObject.transform.localScale = GetRelativeScale(prefab.transform.lossyScale, mesh.transform.lossyScale);
@@ -285,7 +287,7 @@ namespace RepairVision
                     newMesh.RecalculateNormals();
                     newMesh.RecalculateBounds();
                     meshObject.AddComponent<MeshFilter>().mesh = newMesh;
-                    meshObject.AddComponent<MeshRenderer>().sharedMaterial = _blockMaterial;
+                    meshObject.AddComponent<MeshRenderer>().material = _blockMaterial;
                     meshObject.transform.SetParent(pivotObject.transform);
                 }
                 pivotObject.transform.SetParent(shapeObject.transform);
@@ -303,21 +305,18 @@ namespace RepairVision
             return newBlock;
         }
 
-        public static void Initialize()
+        public static void Initialize(AssetBundle  assetBundle)
         {
-            var exePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var bundlePath = Path.Combine(exePath, "Resources", "repairvision.unity3d");
-            var bundle = AssetBundle.LoadFromFile(bundlePath);
-            var shaders = bundle.LoadAllAssets<Shader>();
+            var shaders = assetBundle.LoadAllAssets<Shader>();
             _blockMaterial = new Material(shaders[0]);
-            var fadeStart = (int)Math.Floor(RepairVision.Config.ScanRange / 3.0f);
-            var fadeEnd = (int)Math.Floor(fadeStart * 2.0);
-            _blockMaterial.SetFloat("_FadeStartDist", fadeStart);
-            _blockMaterial.SetFloat("_FadeEndDist", fadeEnd);
+            FadeStart = (int)Math.Floor(RepairVision.Config.ScanRange / 3.0f);
+            FadeEnd = (int)Math.Floor(FadeStart * 2.0);
+            _blockMaterial.SetFloat("_FadeStartDist", FadeStart);
+            _blockMaterial.SetFloat("_FadeEndDist", FadeEnd);
             
             _blockObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
             Object.Destroy(_blockObject.GetComponent<BoxCollider>());
-            _blockObject.GetComponent<MeshRenderer>().sharedMaterial = _blockMaterial;
+            _blockObject.GetComponent<MeshRenderer>().material = _blockMaterial;
             _blockObject.SetActive(false);
         }
 

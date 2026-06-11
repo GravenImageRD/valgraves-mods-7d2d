@@ -39,6 +39,7 @@
         <Compile Include="RepairVision.cs" />
         <Compile Include="RepairVisionActions.cs" />
         <Compile Include="RepairVisionConfig.cs" />
+        <Compile Include="RepairVisionManager.cs" />
         <Compile Include="RepairVisionPatches.cs" />
     </ItemGroup>
     <ItemGroup>
