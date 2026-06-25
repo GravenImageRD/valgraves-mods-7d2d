@@ -41,6 +41,7 @@
         <Compile Include="RepairVisionConfig.cs" />
         <Compile Include="RepairVisionManager.cs" />
         <Compile Include="RepairVisionPatches.cs" />
+        <Compile Include="Scripts\RepairVisionDoor.cs" />
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\Valgraves.Common\Valgraves.Common.csproj">
@@ -83,6 +84,10 @@
       <Reference Include="LogLibrary">
         <HintPath>..\..\..\.local\share\Steam\steamapps\common\7 Days To Die\7DaysToDie_Data\Managed\LogLibrary.dll</HintPath>
           <Private>False</Private>
+      </Reference>
+      <Reference Include="mscorlib">
+        <HintPath>..\..\..\.local\share\Steam\steamapps\common\7 Days To Die\7DaysToDie_Data\Managed\mscorlib.dll</HintPath>
+        <Private>False</Private>  
       </Reference>
       <Reference Include="Newtonsoft.Json">
         <HintPath>..\..\..\.local\share\Steam\steamapps\common\7 Days To Die\7DaysToDie_Data\Managed\Newtonsoft.Json.dll</HintPath>

@@ -26,7 +26,7 @@ namespace RepairVision
             var bundlePath = Path.Combine(exePath, "Resources", "repairvision.unity3d");
             var bundle = AssetBundle.LoadFromFile(bundlePath);
             
-            Manager = new RepairVisionManager(Config, bundle);
+            Manager = new RepairVisionManager(bundle);
             BlockHelpers.Initialize(bundle);
         }
     }

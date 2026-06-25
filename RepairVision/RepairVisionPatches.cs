@@ -24,4 +24,13 @@ namespace RepairVision
             }
         }
     }
+
+    [HarmonyPatch(typeof(Block), nameof(Block.OnBlockDestroyedBy))]
+    public class BlockDestroyedBy
+    {
+        public static void Postfix(Block __instance, BlockValueRef _bvRef)
+        {
+            RepairVision.Manager.RemoveBlockAtPosition(_bvRef);
+        }
+    }
 }

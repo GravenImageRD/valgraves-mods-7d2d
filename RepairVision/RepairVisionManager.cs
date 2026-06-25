@@ -17,24 +17,33 @@ namespace RepairVision
         private Coroutine _scanCoroutine = null;
         private List<Vector3i> _scanOffsets = new List<Vector3i>();
         private float _timePerFrame = 1f / 10000f;
+        private int _scanRange = 25;
+        private float _maxDistance = 44f;
+        private int _totalNearBlocks = 0;
         private GameObject _scannerPrefab;
         private RepairVisionActions _repairVisionActions;
+        private Vector3i[] _nearBlockPositions = Array.Empty<Vector3i>();
+        private Vector3i _lastCenter = Vector3i.max;
         
-        public RepairVisionManager(RepairVisionConfig config, AssetBundle assetBundle)
+        public RepairVisionManager(AssetBundle assetBundle)
         {
             _timePerFrame = RepairVision.Config.MsPerFrame / 1000f;
-            for (int i = -config.ScanRange; i <= config.ScanRange; i++)
+            _scanRange = RepairVision.Config.ScanRange;
+            _maxDistance = Mathf.Sqrt((_scanRange * _scanRange) * 3) + 0.5f; // Add a little fudge to make sure it is outside the scan range
+            for (int i = -_scanRange; i <= _scanRange; i++)
             {
-                for (int j = -config.ScanRange; j <= config.ScanRange; j++)
+                for (int j = -_scanRange; j <= _scanRange; j++)
                 {
-                    for (int k = -config.ScanRange; k <= config.ScanRange; k++)
+                    for (int k = -_scanRange; k <= _scanRange; k++)
                     {
                         var scanOffset = new Vector3i(i, j, k);
                         _scanOffsets.Add(scanOffset);
                     }
                 }
             }
-            
+            _totalNearBlocks = _scanOffsets.Count;
+            _nearBlockPositions = new Vector3i[_totalNearBlocks];
+
             // Sort offsets from inside out.
             _scanOffsets.Sort((x, y) => x.Magnitude().CompareTo(y.Magnitude()));
             
@@ -103,54 +112,66 @@ namespace RepairVision
             }
             BlockHelpers.CleanUp();
         }
+
+        private Vector3i[] GenerateNearPositionsNew(Vector3i center)
+        {
+            if (center == _lastCenter)
+            {
+                return _nearBlockPositions;
+            }
+
+            _lastCenter = center;
+            int i = 0;
+            foreach (var offset in _scanOffsets)
+            {
+                _nearBlockPositions[i++] = center + offset; 
+            }
+
+            return _nearBlockPositions;
+        }
         
         private IEnumerator ScanCoroutine(EntityPlayerLocal player)
         {
             _scanRunning = true;
             var center = player.position.FloorToInt();
-            List<Vector3i> nearBlockPositions = new List<Vector3i>();
-            foreach (var offset in _scanOffsets)
-            {
-                nearBlockPositions.Add(center + offset);
-            }
-
-            for (int i = 0; i < nearBlockPositions.Count; i++)
+            GenerateNearPositionsNew(center);
+            
+            for (int i = 0; i < _totalNearBlocks; i++)
             {
                 double frameStartTime = Time.realtimeSinceStartupAsDouble;
                 int startI = i;
-                while (i < nearBlockPositions.Count && _timePerFrame > (Time.realtimeSinceStartupAsDouble - frameStartTime))
+                while (i < _totalNearBlocks && _timePerFrame > (Time.realtimeSinceStartupAsDouble - frameStartTime))
                 {
-                    var position = nearBlockPositions[i++];
+                    var position = _nearBlockPositions[i++];
                     var blockValue = GameManager.Instance.World.GetBlock(position);
-                            
+
                     // Skip for terrain and unrepairable blocks.
                     if (blockValue.isair || blockValue.isTerrain || blockValue.isWater || !blockValue.Block.CanRepair(blockValue) || blockValue.ischild)
                     {
                         continue;
                     }
-                    
+
                     var hpPercent = (1.0f * (blockValue.Block.MaxDamage - blockValue.damage)) / blockValue.Block.MaxDamage;
-                            
+
                     // If the block isn't in bad shape, skip it and move on, removing tracked block if needed.
                     try
                     {
                         if (hpPercent > RepairVision.Config.DamageThreshold)
                         {
-                            if (_blocks.TryGetValue(position, out GameObject existingBlock))
+                            if (_blocks.ContainsKey(position))
                             {
-                                Origin.Remove(existingBlock.transform);
-                                Object.Destroy(existingBlock);
-                                _blocks.Remove(position);
+                                RemoveBlockAtPosition(position);
                             }
+
                             continue;
                         }
-                                
+
                         // If we don't already have this block generated, generate it now.
                         if (!_blocks.TryGetValue(position, out GameObject damageBlock))
                         {
                             var blockPosition = position.ToVector3() - Origin.position;
                             var blockRotation = blockValue.Block.shape.GetRotation(blockValue);
-                                    
+
                             // Handle BlockShapes.
                             if (blockValue.Block.shape is BlockShapeNew blockShape)
                             {
@@ -171,18 +192,12 @@ namespace RepairVision
                                         blockPosition = blockEntity.transform.position;
                                         damageBlock.transform.rotation = blockEntity.transform.rotation;
                                     }
-                                }                                    
+                                }
                             }
                             // Handle multiblocks.
                             else if (blockValue.Block.isMultiBlock)
                             {
                                 var modelEntity = blockValue.Block.shape as BlockShapeModelEntity;
-                                Logging.Error($"Block {blockValue.Block.blockName} bsme {modelEntity.modelName} offset ({modelEntity.modelOffset})");
-                                if (nearBlockPositions.Contains(blockValue.parent))
-                                {
-                                    continue;
-                                }
-
                                 if (!_blocks.TryGetValue(blockValue.parent, out damageBlock))
                                 {
                                     var modelProperty = blockValue.Block.dynamicProperties.GetString("Model");
@@ -207,7 +222,7 @@ namespace RepairVision
                                 damageBlock.transform.rotation = blockRotation;
                                 blockPosition += Vector3.one * 0.5f;
                             }
-                                    
+
                             damageBlock.transform.position = blockPosition;
                             player.StartCoroutine(FadeInBlockCoroutine(damageBlock));
                             Origin.Add(damageBlock.transform, 0);
@@ -222,16 +237,19 @@ namespace RepairVision
                             _blocks.Remove(position);
                             continue;
                         }
-                    
+
                         // Interpolate the end and start color by HP percent to get the current color.
-                        var blockColor = Color.Lerp(RepairVision.Config.GetEndColor(), RepairVision.Config.GetStartColor(), hpPercent);
-                        foreach (var renderer in damageBlock.GetComponentsInChildren<MeshRenderer>())
+                        TimeCall.Run("UpdateBlock", () =>
                         {
-                            foreach (var material in renderer.materials)
+                            var blockColor = Color.Lerp(RepairVision.Config.GetEndColor(), RepairVision.Config.GetStartColor(), hpPercent);
+                            foreach (var renderer in damageBlock.GetComponentsInChildren<MeshRenderer>())
                             {
-                                material.SetColor("_Color", blockColor);
+                                foreach (var material in renderer.materials)
+                                {
+                                    material.SetColor("_Color", blockColor);
+                                }
                             }
-                        }
+                        });
                     }
                     catch (Exception e)
                     {
@@ -239,31 +257,49 @@ namespace RepairVision
                     }
                 }
 
-                if (i < nearBlockPositions.Count)
+                if (i < _totalNearBlocks)
                 {
                     var blocksProcessed = i - startI;
                     if (blocksProcessed < 100)
                     {
-                        Logging.Error($"RepairVision scan only processed {i-startI} blocks with time allocation {_timePerFrame}ms! Consider adjusting!");
-                    } else if (blocksProcessed < 500)
+                        Logging.Error($"RepairVision scan only processed {i - startI} blocks with time allocation {_timePerFrame}ms! Consider adjusting!");
+                    }
+                    else if (blocksProcessed < 500)
                     {
-                        Logging.Warning($"RepairVision scan only processed {i-startI} blocks with time allocation {_timePerFrame}ms! Consider adjusting!");
+                        Logging.Warning($"RepairVision scan only processed {i - startI} blocks with time allocation {_timePerFrame}ms! Consider adjusting!");
                     }
 
                     yield return null;
                 }
             }
-            
+
             // Remove far blocks.
-            var farBlockPositions = _blocks.Keys.Except(nearBlockPositions).ToList();
-            foreach (var position in farBlockPositions)
-            {
-                Origin.Remove(_blocks[position].transform);
-                Object.Destroy(_blocks[position]);
-                _blocks.Remove(position);
-            }
-            
+            RemoveFarBlocks(center);
+
             _scanRunning = false;
+        }
+
+        private void RemoveFarBlocks(Vector3i center)
+        {
+            var positions = _blocks.Keys.ToList();
+            foreach (var position in positions)
+            {
+                if ((center - position).Magnitude() > _maxDistance)
+                {
+                    Logging.Error($"Removing far block at {position}");
+                    RemoveBlockAtPosition(position);
+                }
+            }
+        }
+
+        public void RemoveBlockAtPosition(Vector3i blockPosition)
+        {
+            if (_blocks.TryGetValue(blockPosition, out var block))
+            {
+                Origin.Remove(block.transform);
+                Object.Destroy(block);
+                _blocks.Remove(blockPosition);
+            }
         }
 
         private IEnumerator FadeInBlockCoroutine(GameObject block)

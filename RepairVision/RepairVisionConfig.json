@@ -10,7 +10,7 @@
 //   Colon,  DoubleQuote,  LessThan,  GreaterThan,  QuestionMark
 {
   // Turns on more verbose logging for debugging.
-  "DebugLogging": false,
+  "DebugLogging": true,
   
   "ToggleRepairVisionKeyBind": [ "Alt", "V" ],
   
@@ -52,5 +52,5 @@
   // if you see it is still causing trouble you can can adjust it down. It will warn in the console if your allocation is updating
   // less than 500 blocks a frame, and error if it is less than 100, as a scan range of 25 means 50x50x50 blocks, or 125,000 blocks
   // which at 500 blocks would take 250 frames, or over 4s at 60FPS, and 100 would be 1250 frames, or more than 20s per pass.  
-  "MsPerFrame": 1
+  "MsPerFrame": 0.5
 }
