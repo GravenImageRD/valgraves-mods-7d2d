@@ -15,7 +15,7 @@ namespace Valgraves.Common
             get
             {
                 _currentPlayer = GameManager.Instance.World?.GetPrimaryPlayer();
-                if (_currentPlayer == null)
+                if (!_currentPlayer)
                 {
                     Logging.Warning("Could not find primary player.");
                 }
