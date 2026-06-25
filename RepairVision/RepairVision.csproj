@@ -35,7 +35,8 @@
     </PropertyGroup>
     <ItemGroup>
         <Compile Include="BlockHelpers.cs" />
-        <Compile Include="Properties\AssemblyInfo.cs"/>
+        <Compile Include="Objects\RepairVisionBlock.cs" />
+        <Compile Include="Properties\AssemblyInfo.cs" />
         <Compile Include="RepairVision.cs" />
         <Compile Include="RepairVisionActions.cs" />
         <Compile Include="RepairVisionConfig.cs" />

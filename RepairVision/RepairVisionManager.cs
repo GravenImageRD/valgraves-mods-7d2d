@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using RepairVision.Objects;
 using UniLinq;
 using UnityEngine;
 using Valgraves.Common;
@@ -12,7 +13,7 @@ namespace RepairVision
     public class RepairVisionManager
     {
         private bool _repairVisionEnabled = false;
-        private Dictionary<Vector3i, GameObject> _blocks = new Dictionary<Vector3i, GameObject>();
+        private Dictionary<Vector3i, RepairVisionBlock> _blocks = new Dictionary<Vector3i, RepairVisionBlock>();
         private bool _scanRunning = false;
         private Coroutine _scanCoroutine = null;
         private List<Vector3i> _scanOffsets = new List<Vector3i>();
@@ -105,10 +106,10 @@ namespace RepairVision
         private void CleanUpObjects(EntityPlayerLocal player)
         {
             var oldBlocks = _blocks.Values.ToList();
-            _blocks = new Dictionary<Vector3i, GameObject>();
-            foreach (var blockObject in oldBlocks)
+            _blocks = new Dictionary<Vector3i, RepairVisionBlock>();
+            foreach (var block in oldBlocks)
             {
-                player.StartCoroutine(FadeOutBlockCoroutine(blockObject));
+                player.StartCoroutine(FadeOutBlockCoroutine(block.GameObject));
             }
             BlockHelpers.CleanUp();
         }
@@ -167,8 +168,9 @@ namespace RepairVision
                         }
 
                         // If we don't already have this block generated, generate it now.
-                        if (!_blocks.TryGetValue(position, out GameObject damageBlock))
+                        if (!_blocks.TryGetValue(position, out RepairVisionBlock block))
                         {
+                            GameObject damageBlock = null;
                             var blockPosition = position.ToVector3() - Origin.position;
                             var blockRotation = blockValue.Block.shape.GetRotation(blockValue);
 
@@ -198,20 +200,17 @@ namespace RepairVision
                             else if (blockValue.Block.isMultiBlock)
                             {
                                 var modelEntity = blockValue.Block.shape as BlockShapeModelEntity;
-                                if (!_blocks.TryGetValue(blockValue.parent, out damageBlock))
+                                var modelProperty = blockValue.Block.dynamicProperties.GetString("Model");
+                                if (!string.IsNullOrEmpty(modelProperty))
                                 {
-                                    var modelProperty = blockValue.Block.dynamicProperties.GetString("Model");
-                                    if (!string.IsNullOrEmpty(modelProperty))
-                                    {
-                                        var dimensions = blockValue.Block.multiBlockPos.dim;
-                                        var xOff = (float)Math.Floor(dimensions.x / 2.0f);
-                                        var zOff = (float)Math.Floor(dimensions.z / 2.0f);
-                                        var offset = modelEntity.GetRotatedOffset(blockValue.Block, modelEntity.GetRotation(blockValue));
-                                        damageBlock = BlockHelpers.GeneratePrefabObject(modelEntity.modelNameWithPath, dimensions, offset);
-                                        blockPosition += offset;
-                                        blockPosition += new Vector3(0.5f, 0.0f, 0.5f);
-                                        damageBlock.transform.rotation = blockRotation;
-                                    }
+                                    var dimensions = blockValue.Block.multiBlockPos.dim;
+                                    var xOff = (float)Math.Floor(dimensions.x / 2.0f);
+                                    var zOff = (float)Math.Floor(dimensions.z / 2.0f);
+                                    var offset = modelEntity.GetRotatedOffset(blockValue.Block, modelEntity.GetRotation(blockValue));
+                                    damageBlock = BlockHelpers.GeneratePrefabObject(modelEntity.modelNameWithPath, dimensions, offset);
+                                    blockPosition += offset;
+                                    blockPosition += new Vector3(0.5f, 0.0f, 0.5f);
+                                    damageBlock.transform.rotation = blockRotation;
                                 }
                             }
 
@@ -226,26 +225,17 @@ namespace RepairVision
                             damageBlock.transform.position = blockPosition;
                             player.StartCoroutine(FadeInBlockCoroutine(damageBlock));
                             Origin.Add(damageBlock.transform, 0);
-                            _blocks.Add(position, damageBlock);
+                            block = new RepairVisionBlock() { GameObject = damageBlock, Position = position };
+                            block.Update(hpPercent);
+                            _blocks.Add(position, block);
                         }
 
                         // If we got here and have a null block, that's a bad sign. Remove the position so it can
                         // be re-generated next frame.
-                        if (!damageBlock || !damageBlock.transform)
+                        if (block == null)
                         {
                             Logging.Error($"Position {position} had bad block, removing.");
                             _blocks.Remove(position);
-                            continue;
-                        }
-
-                        // Interpolate the end and start color by HP percent to get the current color.
-                        var blockColor = Color.Lerp(RepairVision.Config.GetEndColor(), RepairVision.Config.GetStartColor(), hpPercent);
-                        foreach (var renderer in damageBlock.GetComponentsInChildren<MeshRenderer>())
-                        {
-                            foreach (var material in renderer.materials)
-                            {
-                                material.SetColor("_Color", blockColor);
-                            }
                         }
                     }
                     catch (Exception e)
@@ -289,12 +279,20 @@ namespace RepairVision
             }
         }
 
+        public void UpdateBlock(Vector3i blockPosition, float hpPercent)
+        {
+            if (_blocks.TryGetValue(blockPosition, out var block))
+            {
+                block.Update(hpPercent);
+            }
+        }
+
         public void RemoveBlockAtPosition(Vector3i blockPosition)
         {
             if (_blocks.TryGetValue(blockPosition, out var block))
             {
-                Origin.Remove(block.transform);
-                Object.Destroy(block);
+                Origin.Remove(block.GameObject.transform);
+                Object.Destroy(block.GameObject);
                 _blocks.Remove(blockPosition);
             }
         }
