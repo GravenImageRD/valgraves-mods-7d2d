@@ -239,17 +239,14 @@ namespace RepairVision
                         }
 
                         // Interpolate the end and start color by HP percent to get the current color.
-                        TimeCall.Run("UpdateBlock", () =>
+                        var blockColor = Color.Lerp(RepairVision.Config.GetEndColor(), RepairVision.Config.GetStartColor(), hpPercent);
+                        foreach (var renderer in damageBlock.GetComponentsInChildren<MeshRenderer>())
                         {
-                            var blockColor = Color.Lerp(RepairVision.Config.GetEndColor(), RepairVision.Config.GetStartColor(), hpPercent);
-                            foreach (var renderer in damageBlock.GetComponentsInChildren<MeshRenderer>())
+                            foreach (var material in renderer.materials)
                             {
-                                foreach (var material in renderer.materials)
-                                {
-                                    material.SetColor("_Color", blockColor);
-                                }
+                                material.SetColor("_Color", blockColor);
                             }
-                        });
+                        }
                     }
                     catch (Exception e)
                     {
