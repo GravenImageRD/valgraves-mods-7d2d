@@ -33,25 +33,7 @@ namespace RepairVision
             
             var meshFilters = tileEntity.transform.GetComponentsInChildren<MeshFilter>(true);
             var skinnedMeshRenderers = tileEntity.transform.GetComponentsInChildren<SkinnedMeshRenderer>(true);
-            
-            // Add frame.
-            var frameObject = new GameObject();
-            var frameMesh = meshFilters.FirstOrDefault(x => x.name.ContainsCaseInsensitive("Frame"));
-            if (!frameMesh)
-            {
-                Logging.Warning($"Couldn't find frameMesh for tile {tileEntity.transform.name}");
-            }
-            else
-            {
-                frameObject.AddComponent<MeshFilter>().mesh = frameMesh.mesh;
-                frameObject.AddComponent<MeshRenderer>().material = _blockMaterial;
-                frameObject.transform.localScale = GetRelativeScale(tileEntity.transform.lossyScale, frameMesh.transform.lossyScale);
-                frameObject.transform.localPosition = tileEntity.transform.InverseTransformPoint(frameMesh.transform.position);
-                frameObject.transform.localRotation = Quaternion.Inverse(tileEntity.transform.rotation) * frameMesh.transform.rotation;
-                frameObject.transform.SetParent(entityObject.transform);
-            }
 
-            // Add main door if possible.
             var doorMesh = skinnedMeshRenderers.FirstOrDefault(x => x.name.ContainsCaseInsensitive("DMG0_LOD0"));
             if (!doorMesh)
             {
@@ -149,7 +131,7 @@ namespace RepairVision
             var processedMeshes = new List<string>();
             foreach (var mesh in meshes)
             {
-                var filterName = Regex.Replace(mesh.name, "(_LOD\\d+)$", string.Empty);
+                var filterName = Regex.Replace(mesh.name, "(_?LOD\\d+)$", string.Empty);
                 if (processedMeshes.Contains(filterName))
                 {
                     Logging.Warning($"Skipping mesh {mesh.name} because it is an extra LOD");
@@ -177,15 +159,13 @@ namespace RepairVision
             {
                 var prefabId = DataLoader.ParseDataPathIdentifier(prefabName);
                 var prefab = DataLoader.LoadAsset<GameObject>(prefabId);
-                if (prefab == null)
+                if (prefab)
                 {
                     Logging.Error($"Failed to find prefab {prefabName}");
                     return null;
                 }
 
                 entityObject = new GameObject();
-                // var xOff = (float)Math.Floor(dimensions.x / 2.0f);
-                // var zOff = (float)Math.Floor(dimensions.z / 2.0f);
                 var meshes = prefab.transform.GetComponentsInChildren<MeshFilter>(true);
                 var processedMeshes = new List<string>();
                 foreach (var mesh in meshes)
@@ -204,7 +184,7 @@ namespace RepairVision
                     var localPos = prefab.transform.InverseTransformPoint(mesh.transform.position);
                     var localRot = Quaternion.Inverse(prefab.transform.rotation) * mesh.transform.rotation;
                     meshObject.transform.localScale = GetRelativeScale(prefab.transform.lossyScale, mesh.transform.lossyScale);
-                    meshObject.transform.localPosition = localPos;// - new Vector3(xOff, 0, zOff) + offset;
+                    meshObject.transform.localPosition = localPos;
                     meshObject.transform.localRotation = localRot;
                     meshObject.transform.SetParent(entityObject.transform);
                 }
@@ -232,7 +212,7 @@ namespace RepairVision
 
                     default:
                     {
-                        if (tileEntity.transform.GetComponentInChildren<AutoTurretController>() != null)
+                        if (tileEntity.transform.GetComponentInChildren<AutoTurretController>())
                         {
                             entityObject = GenerateTurretObject(ref tileEntity);
                         }

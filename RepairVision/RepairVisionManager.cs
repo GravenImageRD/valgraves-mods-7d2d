@@ -234,7 +234,7 @@ namespace RepairVision
                         // be re-generated next frame.
                         if (block == null)
                         {
-                            Logging.Error($"Position {position} had bad block, removing.");
+                            Logging.Warning($"Position {position} had bad block, removing.");
                             _blocks.Remove(position);
                         }
                     }
@@ -273,7 +273,7 @@ namespace RepairVision
             {
                 if ((center - position).Magnitude() > _maxDistance)
                 {
-                    Logging.Error($"Removing far block at {position}");
+                    Logging.Warning($"Removing far block at {position}");
                     RemoveBlockAtPosition(position);
                 }
             }
